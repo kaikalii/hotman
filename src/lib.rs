@@ -1,3 +1,9 @@
+#![warn(missing_docs)]
+
+/*!
+This crate provides a simple way to generate HTML elements in pure Rust.
+*/
+
 mod attribute;
 
 use std::fmt;
@@ -5,13 +11,16 @@ use std::fmt;
 use paste::paste;
 
 pub use attribute::*;
-
 use attribute_traits::*;
 
-pub trait ElementTrait: Sized {
-    fn children(&self) -> &[Element];
-    fn children_mut(&mut self) -> &mut Vec<Element>;
+/// Trait for types of elements
+pub trait Element: Sized {
+    /// Get the children of this element
+    fn children(&self) -> &[Node];
+    /// Get the mutable children of this element
+    fn children_mut(&mut self) -> &mut Vec<Node>;
 }
+
 macro_rules! impl_global_attrs {
     ($name:ident, $($attr:ident),* $(,)?) => {
         $(
@@ -31,37 +40,47 @@ macro_rules! impl_global_attrs {
 
 macro_rules! elements {
         ($(($name:ident, $tag:ident $(,$attr:ident)?)),* $(,)*) => {
+            /// An HTML node
             #[derive(Debug, Clone)]
-            pub enum Element {
-                $($name(element_structs::$name),)*
+            pub enum Node {
+                $(#[allow(missing_docs)] $name(element_structs::$name),)*
+                /// A text element
                 Text(String),
             }
 
-            impl fmt::Display for Element {
+            impl fmt::Display for Node {
                 fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                     match self {
-                        $(Element::$name(element) => write!(f, "{element}"),)*
-                        Element::Text(text) => write!(f, "{text}"),
+                        $(Node::$name(element) => write!(f, "{element}"),)*
+                        Node::Text(text) => write!(f, "{text}"),
                     }
                 }
             }
 
             pub mod element_structs {
+                //! Structs that represent HTML elements
+
                 use super::*;
                 $(
                     #[derive(Debug, Clone, Default)]
+                    #[doc = "A `"]
+                    #[doc = stringify!($tag)]
+                    #[doc = "` element"]
                     pub struct $name {
+                        /// The `id` attribute
                         pub id: String,
+                        /// The `class` attribute
                         pub class: String,
+                        /// The `style` attribute
                         pub style: String,
-                        $(pub $attr: String,)*
-                        pub children: Vec<Element>,
-                    }
-
-                    impl $name {
-                        pub fn new() -> Self {
-                            Self::default()
-                        }
+                        $(
+                            #[doc = "The `"]
+                            #[doc = stringify!($attr)]
+                            #[doc = "` attribute"]
+                            pub $attr: String,
+                        )*
+                        /// The children of this element
+                        pub children: Vec<Node>,
                     }
 
                     impl fmt::Display for $name {
@@ -82,17 +101,17 @@ macro_rules! elements {
                         }
                     }
 
-                    impl From<$name> for Element {
+                    impl From<$name> for Node {
                         fn from(element: $name) -> Self {
-                            Element::$name(element)
+                            Node::$name(element)
                         }
                     }
 
-                    impl ElementTrait for $name {
-                        fn children(&self) -> &[Element] {
+                    impl Element for $name {
+                        fn children(&self) -> &[Node] {
                             &self.children
                         }
-                        fn children_mut(&mut self) -> &mut Vec<Element> {
+                        fn children_mut(&mut self) -> &mut Vec<Node> {
                             &mut self.children
                         }
                     }
@@ -115,8 +134,12 @@ macro_rules! elements {
             }
 
             $(
+                #[must_use]
+                #[doc = "Make a `"]
+                #[doc = stringify!($tag)]
+                #[doc = "` element"]
                 pub fn $tag(data: impl ElementData<element_structs::$name>) -> element_structs::$name {
-                    let mut elem = element_structs::$name::new();
+                    let mut elem = element_structs::$name::default();
                     data.add_to(&mut elem);
                     elem
                 }
@@ -124,21 +147,21 @@ macro_rules! elements {
         };
     }
 
-impl From<String> for Element {
+impl From<String> for Node {
     fn from(text: String) -> Self {
-        Element::Text(text)
+        Node::Text(text)
     }
 }
 
-impl From<&str> for Element {
+impl From<&str> for Node {
     fn from(text: &str) -> Self {
-        Element::Text(text.to_string())
+        Node::Text(text.to_string())
     }
 }
 
-impl From<&String> for Element {
+impl From<&String> for Node {
     fn from(text: &String) -> Self {
-        Element::Text(text.to_string())
+        Node::Text(text.to_string())
     }
 }
 
@@ -238,7 +261,11 @@ elements!(
     (Rp, rp),
 );
 
+/// A piece of data that can be added to an element
+///
+/// It is usually an attribute or a child element
 pub trait ElementData<E> {
+    /// Add this data to the given element
     fn add_to(self, element: &mut E);
 }
 
@@ -248,8 +275,8 @@ impl<E> ElementData<E> for () {
 
 impl<E, D> ElementData<E> for D
 where
-    E: ElementTrait,
-    D: Into<Element>,
+    E: Element,
+    D: Into<Node>,
 {
     fn add_to(self, elem: &mut E) {
         elem.children_mut().push(self.into());
@@ -258,7 +285,7 @@ where
 
 impl<E, D> ElementData<E> for Vec<D>
 where
-    E: ElementTrait,
+    E: Element,
     D: ElementData<E>,
 {
     fn add_to(self, elem: &mut E) {
@@ -270,7 +297,7 @@ where
 
 impl<E, D, const N: usize> ElementData<E> for [D; N]
 where
-    E: ElementTrait,
+    E: Element,
     D: ElementData<E>,
 {
     fn add_to(self, elem: &mut E) {
@@ -282,7 +309,7 @@ where
 
 impl<E, D> ElementData<E> for Option<D>
 where
-    E: ElementTrait,
+    E: Element,
     D: ElementData<E>,
 {
     fn add_to(self, elem: &mut E) {
