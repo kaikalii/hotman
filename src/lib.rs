@@ -25,12 +25,12 @@ macro_rules! impl_global_attrs {
     ($name:ident, $($attr:ident),* $(,)?) => {
         $(
             paste! {
-                impl [<Has $attr>] for $name {
+                impl [<Has_ $attr>] for $name {
                     fn $attr(&self) -> &str {
                         &self.$attr
                     }
-                    fn [<set_ $attr>](&mut self, value: impl Into<String>) {
-                        self.$attr = value.into();
+                    fn [<set_ $attr>](&mut self, val: impl Into<String>) {
+                        self.$attr = val.into();
                     }
                 }
             }
@@ -39,7 +39,7 @@ macro_rules! impl_global_attrs {
 }
 
 macro_rules! elements {
-    ($(($name:ident, $tag:ident $(,$attr:ident)*)),* $(,)*) => {
+    ($(($name:ident, $tag:ident $(,$attr:ident)* $(,)?)),* $(,)*) => {
         /// An HTML node
         #[derive(Debug, Clone)]
         pub enum Node {
@@ -73,6 +73,8 @@ macro_rules! elements {
                     pub class: String,
                     /// The `style` attribute
                     pub style: String,
+                    /// The `title` attribute
+                    pub title: String,
                     $(
                         #[doc = "The `"]
                         #[doc = stringify!($attr)]
@@ -116,16 +118,16 @@ macro_rules! elements {
                     }
                 }
 
-                impl_global_attrs!($name, id, class, style);
+                impl_global_attrs!($name, id, class, style, title);
 
                 $(
                     paste! {
-                        impl [<Has $attr>] for $name {
+                        impl [<Has_ $attr>] for $name {
                             fn $attr(&self) -> &str {
                                 &self.$attr
                             }
-                            fn [<set_ $attr>](&mut self, value: impl Into<String>) {
-                                self.$attr = value.into();
+                            fn [<set_ $attr>](&mut self, val: impl Into<String>) {
+                                self.$attr = val.into();
                             }
                         }
                     }
@@ -138,9 +140,9 @@ macro_rules! elements {
             #[doc = "Make a `"]
             #[doc = stringify!($tag)]
             #[doc = "` element"]
-            pub fn $tag(data: impl ElementData<element_structs::$name>) -> element_structs::$name {
-                let mut elem = element_structs::$name::default();
-                data.add_to(&mut elem);
+            pub fn $tag(elem_data: impl ElementData<element_structs::$name>) -> element_structs::$name {
+                let mut elem = Default::default();
+                elem_data.add_to(&mut elem);
                 elem
             }
         )*
@@ -166,99 +168,255 @@ impl From<&String> for Node {
 }
 
 elements!(
-    (A, a, href, rel),
+    (
+        A,
+        a,
+        download,
+        href,
+        hreflang,
+        ping,
+        referrerpolicy,
+        rel,
+        target,
+        r#type,
+    ),
     (Abbr, abbr),
-    (Area, area, href, rel),
-    (Audio, audio),
-    (Base, base, href),
-    (Bdi, bdi),
-    (Bdo, bdo),
-    (Blockquote, blockquote),
-    (Body, body),
-    (Br, br),
-    (Button, button),
-    (Canvas, canvas),
+    (
+        Area,
+        area,
+        alt,
+        coords,
+        download,
+        href,
+        hreflang,
+        ping,
+        referrerpolicy,
+        rel,
+        shape,
+        target
+    ),
+    (Audio, audio, autoplay, controls, r#loop, muted, preload, src),
+    (B, b),
+    (Base, base, href, target),
+    (Bdi, bdi, dir),
+    (Bdo, bdo, dir),
+    (Blockquote, blockquote, cite),
+    (
+        Body,
+        body,
+        onafterprint,
+        onbeforeprint,
+        onbeforeunload,
+        onhashchange,
+        onlanguagechange,
+        onmessage,
+        onmessageerror,
+        onoffline,
+        ononline,
+        onpagehide,
+        onpageshow,
+        onpopstate,
+        onrejectionhandled,
+        onstorage,
+        onunhandledrejection,
+        onunload
+    ),
+    (Br, br, clear),
+    (
+        Button,
+        button,
+        autofocus,
+        disabled,
+        form,
+        formaction,
+        formenctype,
+        formmethod,
+        formnovalidate,
+        formtarget,
+        name,
+        r#type,
+        value
+    ),
+    (Canvas, canvas, height, width),
     (Caption, caption),
     (Cite, cite),
-    (Code, code),
-    (Col, col),
-    (Colgroup, colgroup),
-    (Dd, dd),
-    (Del, del),
-    (Details, details),
+    (Code, code, r#type),
+    (Col, col, span),
+    (Colgroup, colgroup, span),
+    (Dd, dd, r#type),
+    (Del, del, cite, datetime),
+    (Details, details, open),
     (Dfn, dfn),
     (Div, div),
-    (Dl, dl),
-    (Dt, dt),
-    (Em, em),
-    (Embed, embed),
-    (Fieldset, fieldset),
+    (Dl, dl, r#type),
+    (Dt, dt, r#type),
+    (Em, em, r#type),
+    (Embed, embed, height, src, r#type, width),
+    (Fieldset, fieldset, disabled, form, name),
+    (
+        Form,
+        form,
+        accept_charset,
+        action,
+        autocomplete,
+        enctype,
+        method,
+        name,
+        novalidate,
+        target
+    ),
     (H1, h1),
     (H2, h2),
     (H3, h3),
     (H4, h4),
     (H5, h5),
     (H6, h6),
-    (Head, head),
-    (Hr, hr),
+    (Head, head, profile),
+    (Hr, hr, align, color, noshade, size, width),
+    (Html, html, manifest, xmlns),
     (I, i),
     (Iframe, iframe),
-    (Img, img),
-    (Input, input),
-    (Ins, ins),
+    (
+        Img,
+        img,
+        alt,
+        crossorigin,
+        decoding,
+        height,
+        importance,
+        intrinsicsize,
+        ismap,
+        loading,
+        referrerpolicy,
+        sizes,
+        src,
+        srcset,
+        usemap,
+        width
+    ),
+    (
+        Input,
+        input,
+        accept,
+        alt,
+        autocomplete,
+        autofocus,
+        checked,
+        dirname,
+        disabled,
+        form,
+        formaction,
+        formenctype,
+        formmethod,
+        formnovalidate,
+        formtarget,
+        height,
+        list,
+        max,
+        max_length,
+        min,
+        min_length,
+        multiple,
+        name,
+        pattern,
+        placeholder,
+        readonly,
+        required,
+        size,
+        src,
+        step,
+        r#type,
+        value,
+        width
+    ),
+    (Ins, ins, cite, datetime),
     (Kbd, kbd),
-    (Label, label),
+    (Label, label, r#for),
     (Legend, legend),
-    (Li, li),
-    (Link, link, href, rel),
-    (Map, map),
+    (Li, li, value),
+    (
+        Link,
+        link,
+        href,
+        rel,
+        media,
+        hreflang,
+        r#type,
+        sizes,
+        crossorigin,
+        integrity,
+        referrerpolicy
+    ),
+    (Map, map, name),
     (Mark, mark),
-    (Menuitem, menuitem),
-    (Meta, meta, charset),
-    (Meter, meter),
+    (Menu, menu, r#type, label),
+    (Menuitem, menuitem, checked, command, default, disabled, icon, label, radiogroup, r#type),
+    (Meta, meta, charset, http_equiv, name),
+    (Meter, meter, high, low, max, min, optimum, value),
     (Noscript, noscript),
-    (Object, object),
-    (Ol, ol),
-    (Option, option),
-    (Output, output),
+    (Object, object, data, form, height, name, r#type, usemap, width),
+    (Ol, ol, reversed, start, r#type),
+    (Option, option, disabled, label, selected, value),
+    (Output, output, r#for, form, name),
     (P, p),
-    (Progress, progress),
-    (Q, q),
+    (Param, param, name, value),
+    (Progress, progress, max, value),
+    (Q, q, cite),
+    (Rp, rp),
     (Rt, rt),
-    (Ruby, ruby),
     (Samp, samp),
-    (Script, script),
-    (Select, select),
-    (Slot, slot),
+    (
+        Script,
+        script,
+        r#async,
+        crossorigin,
+        defer,
+        integrity,
+        nomodule,
+        nonce,
+        referrerpolicy,
+        r#type,
+        src
+    ),
+    (Select, select, autofocus, disabled, form, multiple, name, required, size),
+    (Slot, slot, name),
     (Small, small),
-    (Source, source),
+    (Source, source, media, sizes, src, srcset, r#type),
     (Span, span),
     (Strong, strong),
-    (Style, style),
+    (Style, style, media, nonce, r#type),
     (Sub, sub),
     (Summary, summary),
     (Sup, sup),
     (Table, table),
     (Tbody, tbody),
-    (Td, td),
+    (Td, td, colspan, headers, rowspan),
     (Template, template),
     (Tfoot, tfoot),
-    (Th, th),
+    (Th, th, colspan, headers, rowspan, scope),
     (Thead, thead),
-    (Time, time),
+    (Time, time, datetime),
     (Title, title),
     (Tr, tr),
-    (Track, track),
+    (Track, track, default, kind, label, src, srclang),
     (Ul, ul),
     (Var, var),
-    (Video, video),
+    (
+        Video,
+        video,
+        autoplay,
+        controls,
+        crossorigin,
+        height,
+        r#loop,
+        muted,
+        playsinline,
+        poster,
+        preload,
+        src,
+        width
+    ),
     (Wbr, wbr),
-    (B, b),
-    (Form, form),
-    (Html, html),
-    (Menu, menu),
-    (Param, param),
-    (Rp, rp),
 );
 
 /// A piece of data that can be added to an element
