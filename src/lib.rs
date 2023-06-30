@@ -39,113 +39,113 @@ macro_rules! impl_global_attrs {
 }
 
 macro_rules! elements {
-        ($(($name:ident, $tag:ident $(,$attr:ident)*)),* $(,)*) => {
-            /// An HTML node
-            #[derive(Debug, Clone)]
-            pub enum Node {
-                $(#[allow(missing_docs)] $name(element_structs::$name),)*
-                /// A text element
-                Text(String),
-            }
+    ($(($name:ident, $tag:ident $(,$attr:ident)*)),* $(,)*) => {
+        /// An HTML node
+        #[derive(Debug, Clone)]
+        pub enum Node {
+            $(#[allow(missing_docs)] $name(element_structs::$name),)*
+            /// A text element
+            Text(String),
+        }
 
-            impl fmt::Display for Node {
-                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                    match self {
-                        $(Node::$name(element) => write!(f, "{element}"),)*
-                        Node::Text(text) => write!(f, "{text}"),
-                    }
+        impl fmt::Display for Node {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                match self {
+                    $(Node::$name(element) => write!(f, "{element}"),)*
+                    Node::Text(text) => write!(f, "{text}"),
                 }
             }
+        }
 
-            pub mod element_structs {
-                //! Structs that represent HTML elements
+        pub mod element_structs {
+            //! Structs that represent HTML elements
 
-                use super::*;
-                $(
-                    #[derive(Debug, Clone, Default)]
-                    #[doc = "A `"]
-                    #[doc = stringify!($tag)]
-                    #[doc = "` element"]
-                    pub struct $name {
-                        /// The `id` attribute
-                        pub id: String,
-                        /// The `class` attribute
-                        pub class: String,
-                        /// The `style` attribute
-                        pub style: String,
-                        $(
-                            #[doc = "The `"]
-                            #[doc = stringify!($attr)]
-                            #[doc = "` attribute"]
-                            pub $attr: String,
-                        )*
-                        /// The children of this element
-                        pub children: Vec<Node>,
-                    }
-
-                    impl fmt::Display for $name {
-                        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                            let tag = stringify!($tag);
-                            write!(f, "<{tag}")?;
-                            $(
-                                if !self.$attr.is_empty() {
-                                    write!(f, " {}=\"{}\"", stringify!($attr), self.$attr)?;
-                                }
-                            )*
-                            write!(f, ">")?;
-                            for child in &self.children {
-                                write!(f, "{child}")?;
-                            }
-                            write!(f, "</{tag}>")?;
-                            Ok(())
-                        }
-                    }
-
-                    impl From<$name> for Node {
-                        fn from(element: $name) -> Self {
-                            Node::$name(element)
-                        }
-                    }
-
-                    impl Element for $name {
-                        fn children(&self) -> &[Node] {
-                            &self.children
-                        }
-                        fn children_mut(&mut self) -> &mut Vec<Node> {
-                            &mut self.children
-                        }
-                    }
-
-                    impl_global_attrs!($name, id, class, style);
-
-                    $(
-                        paste! {
-                            impl [<Has $attr>] for $name {
-                                fn $attr(&self) -> &str {
-                                    &self.$attr
-                                }
-                                fn [<set_ $attr>](&mut self, value: impl Into<String>) {
-                                    self.$attr = value.into();
-                                }
-                            }
-                        }
-                    )*
-                )*
-            }
-
+            use super::*;
             $(
-                #[must_use]
-                #[doc = "Make a `"]
+                #[derive(Debug, Clone, Default)]
+                #[doc = "A `"]
                 #[doc = stringify!($tag)]
                 #[doc = "` element"]
-                pub fn $tag(data: impl ElementData<element_structs::$name>) -> element_structs::$name {
-                    let mut elem = element_structs::$name::default();
-                    data.add_to(&mut elem);
-                    elem
+                pub struct $name {
+                    /// The `id` attribute
+                    pub id: String,
+                    /// The `class` attribute
+                    pub class: String,
+                    /// The `style` attribute
+                    pub style: String,
+                    $(
+                        #[doc = "The `"]
+                        #[doc = stringify!($attr)]
+                        #[doc = "` attribute"]
+                        pub $attr: String,
+                    )*
+                    /// The children of this element
+                    pub children: Vec<Node>,
                 }
+
+                impl fmt::Display for $name {
+                    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                        let tag = stringify!($tag);
+                        write!(f, "<{tag}")?;
+                        $(
+                            if !self.$attr.is_empty() {
+                                write!(f, " {}=\"{}\"", stringify!($attr), self.$attr)?;
+                            }
+                        )*
+                        write!(f, ">")?;
+                        for child in &self.children {
+                            write!(f, "{child}")?;
+                        }
+                        write!(f, "</{tag}>")?;
+                        Ok(())
+                    }
+                }
+
+                impl From<$name> for Node {
+                    fn from(element: $name) -> Self {
+                        Node::$name(element)
+                    }
+                }
+
+                impl Element for $name {
+                    fn children(&self) -> &[Node] {
+                        &self.children
+                    }
+                    fn children_mut(&mut self) -> &mut Vec<Node> {
+                        &mut self.children
+                    }
+                }
+
+                impl_global_attrs!($name, id, class, style);
+
+                $(
+                    paste! {
+                        impl [<Has $attr>] for $name {
+                            fn $attr(&self) -> &str {
+                                &self.$attr
+                            }
+                            fn [<set_ $attr>](&mut self, value: impl Into<String>) {
+                                self.$attr = value.into();
+                            }
+                        }
+                    }
+                )*
             )*
-        };
-    }
+        }
+
+        $(
+            #[must_use]
+            #[doc = "Make a `"]
+            #[doc = stringify!($tag)]
+            #[doc = "` element"]
+            pub fn $tag(data: impl ElementData<element_structs::$name>) -> element_structs::$name {
+                let mut elem = element_structs::$name::default();
+                data.add_to(&mut elem);
+                elem
+            }
+        )*
+    };
+}
 
 impl From<String> for Node {
     fn from(text: String) -> Self {
