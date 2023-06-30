@@ -1,32 +1,39 @@
-pub mod attribute;
+mod attribute;
 
 use std::fmt;
 
+use paste::paste;
+
 pub use attribute::*;
 
+use attribute_traits::*;
+
 pub trait ElementTrait: Sized {
-    type Attr;
-    fn attributes(&self) -> &Attributes<Self::Attr>;
-    fn attributes_mut(&mut self) -> &mut Attributes<Self::Attr>;
     fn children(&self) -> &[Element];
     fn children_mut(&mut self) -> &mut Vec<Element>;
 }
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-#[doc(hidden)]
-pub struct Unit;
-impl fmt::Display for Unit {
-    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Ok(())
+macro_rules! impl_global_attrs {
+    ($name:ident, $($attr:ident),* $(,)?) => {
+        $(
+            paste! {
+                impl [<Has $attr>] for $name {
+                    fn $attr(&self) -> &str {
+                        &self.$attr
+                    }
+                    fn [<set_ $attr>](&mut self, value: impl Into<String>) {
+                        self.$attr = value.into();
+                    }
+                }
+            }
+        )*
     }
 }
-type DefaultUnit<T = Unit> = T;
 
 macro_rules! elements {
-        ($(($name:ident, $tag:ident $(,$attr:ty)?)),* $(,)*) => {
+        ($(($name:ident, $tag:ident $(,$attr:ident)?)),* $(,)*) => {
             #[derive(Debug, Clone)]
             pub enum Element {
-                $($name(element::$name),)*
+                $($name(element_structs::$name),)*
                 Text(String),
             }
 
@@ -39,12 +46,15 @@ macro_rules! elements {
                 }
             }
 
-            pub mod element {
+            pub mod element_structs {
                 use super::*;
                 $(
                     #[derive(Debug, Clone, Default)]
                     pub struct $name {
-                        pub attributes: Attributes<DefaultUnit<$($attr)?>>,
+                        pub id: String,
+                        pub class: String,
+                        pub style: String,
+                        $(pub $attr: String,)*
                         pub children: Vec<Element>,
                     }
 
@@ -58,7 +68,11 @@ macro_rules! elements {
                         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                             let tag = stringify!($tag);
                             write!(f, "<{tag}")?;
-                            write!(f, "{}", self.attributes)?;
+                            $(
+                                if !self.$attr.is_empty() {
+                                    write!(f, " {}=\"{}\"", stringify!($attr), self.$attr)?;
+                                }
+                            )*
                             write!(f, ">")?;
                             for child in &self.children {
                                 write!(f, "{child}")?;
@@ -75,13 +89,6 @@ macro_rules! elements {
                     }
 
                     impl ElementTrait for $name {
-                        type Attr = DefaultUnit<$($attr)?>;
-                        fn attributes(&self) -> &Attributes<Self::Attr> {
-                            &self.attributes
-                        }
-                        fn attributes_mut(&mut self) -> &mut Attributes<Self::Attr> {
-                            &mut self.attributes
-                        }
                         fn children(&self) -> &[Element] {
                             &self.children
                         }
@@ -89,13 +96,28 @@ macro_rules! elements {
                             &mut self.children
                         }
                     }
+
+                    impl_global_attrs!($name, id, class, style);
+
+                    $(
+                        paste! {
+                            impl [<Has $attr>] for $name {
+                                fn $attr(&self) -> &str {
+                                    &self.$attr
+                                }
+                                fn [<set_ $attr>](&mut self, value: impl Into<String>) {
+                                    self.$attr = value.into();
+                                }
+                            }
+                        }
+                    )*
                 )*
             }
 
             $(
-                pub fn $tag(data: impl ElementData<Attributes<DefaultUnit<$($attr)?>>>) -> element::$name {
-                    let mut elem = element::$name::new();
-                    data.add_to(&mut elem.attributes, &mut elem.children);
+                pub fn $tag(data: impl ElementData<element_structs::$name>) -> element_structs::$name {
+                    let mut elem = element_structs::$name::new();
+                    data.add_to(&mut elem);
                     elem
                 }
             )*
@@ -121,11 +143,11 @@ impl From<&String> for Element {
 }
 
 elements!(
-    (A, a),
+    (A, a, href),
     (Abbr, abbr),
-    (Area, area),
+    (Area, area, href),
     (Audio, audio),
-    (Base, base),
+    (Base, base, href),
     (Bdi, bdi),
     (Bdo, bdo),
     (Blockquote, blockquote),
@@ -165,11 +187,11 @@ elements!(
     (Label, label),
     (Legend, legend),
     (Li, li),
-    (Link, link),
+    (Link, link, href),
     (Map, map),
     (Mark, mark),
     (Menuitem, menuitem),
-    (Meta, meta, MetaAttr),
+    (Meta, meta, charset),
     (Meter, meter),
     (Noscript, noscript),
     (Object, object),
@@ -216,68 +238,70 @@ elements!(
     (Rp, rp),
 );
 
-type Children = Vec<Element>;
-
-pub trait ElementData<A> {
-    fn add_to(self, attributes: &mut A, children: &mut Children);
+pub trait ElementData<E> {
+    fn add_to(self, element: &mut E);
 }
 
-impl<A> ElementData<A> for () {
-    fn add_to(self, _attributes: &mut A, _children: &mut Children) {}
+impl<E> ElementData<E> for () {
+    fn add_to(self, _: &mut E) {}
 }
 
-impl<A, E> ElementData<A> for E
+impl<E, D> ElementData<E> for D
 where
-    E: Into<Element>,
+    E: ElementTrait,
+    D: Into<Element>,
 {
-    fn add_to(self, _attributes: &mut A, children: &mut Children) {
-        children.push(self.into());
+    fn add_to(self, elem: &mut E) {
+        elem.children_mut().push(self.into());
     }
 }
 
-impl<A, E> ElementData<A> for Vec<E>
+impl<E, D> ElementData<E> for Vec<D>
 where
-    E: ElementData<A>,
+    E: ElementTrait,
+    D: ElementData<E>,
 {
-    fn add_to(self, attributes: &mut A, children: &mut Children) {
+    fn add_to(self, elem: &mut E) {
         for child in self {
-            child.add_to(attributes, children);
+            child.add_to(elem);
         }
     }
 }
 
-impl<A, E, const N: usize> ElementData<A> for [E; N]
+impl<E, D, const N: usize> ElementData<E> for [D; N]
 where
-    E: ElementData<A>,
+    E: ElementTrait,
+    D: ElementData<E>,
 {
-    fn add_to(self, attributes: &mut A, children: &mut Children) {
+    fn add_to(self, elem: &mut E) {
         for child in self {
-            child.add_to(attributes, children);
+            child.add_to(elem);
         }
     }
 }
 
-impl<A, E> ElementData<A> for Option<E>
+impl<E, D> ElementData<E> for Option<D>
 where
-    E: ElementData<A>,
+    E: ElementTrait,
+    D: ElementData<E>,
 {
-    fn add_to(self, attributes: &mut A, children: &mut Children) {
+    fn add_to(self, elem: &mut E) {
         if let Some(child) = self {
-            child.add_to(attributes, children);
+            child.add_to(elem);
         }
     }
 }
 
 macro_rules! tuple_element_data {
     ($($T:ident),*) => {
-        impl<Attributes, $($T),*> ElementData<Attributes> for ($($T,)*)
+        impl<Elem, $($T),*> ElementData<Elem> for ($($T,)*)
         where
-            $($T: ElementData<Attributes>),*
+            $($T: ElementData<Elem>),*
         {
             #[allow(non_snake_case)]
-            fn add_to(self, attributes: &mut Attributes, children: &mut Children) {
+            fn add_to(self, elem: &mut Elem) {
                 let ($($T,)*) = self;
-                $($T.add_to(attributes, children);)*
+                $($T.add_to(elem);)*
             }
         }
     };
