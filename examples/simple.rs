@@ -6,6 +6,7 @@ fn main() {
         body(div((
             class("centered"),
             div((h3("Catalog"), h1("Login"), form(()))),
+            label((r#for("username"), "Username: ")),
         ))),
     ));
     println!("{dom}");

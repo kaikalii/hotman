@@ -91,7 +91,7 @@ macro_rules! elements {
                         write!(f, "<{tag}")?;
                         $(
                             if !self.$attr.is_empty() {
-                                write!(f, " {}=\"{}\"", stringify!($attr), self.$attr)?;
+                                write!(f, " {}=\"{}\"", stringify!($attr).trim_start_matches("r#"), self.$attr)?;
                             }
                         )*
                         write!(f, ">")?;
