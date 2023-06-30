@@ -47,4 +47,4 @@ macro_rules! attributes {
     };
 }
 
-attributes!(id, class, style, charset, href,);
+attributes!(id, class, style, charset, href, rel);

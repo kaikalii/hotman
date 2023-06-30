@@ -39,7 +39,7 @@ macro_rules! impl_global_attrs {
 }
 
 macro_rules! elements {
-        ($(($name:ident, $tag:ident $(,$attr:ident)?)),* $(,)*) => {
+        ($(($name:ident, $tag:ident $(,$attr:ident)*)),* $(,)*) => {
             /// An HTML node
             #[derive(Debug, Clone)]
             pub enum Node {
@@ -166,9 +166,9 @@ impl From<&String> for Node {
 }
 
 elements!(
-    (A, a, href),
+    (A, a, href, rel),
     (Abbr, abbr),
-    (Area, area, href),
+    (Area, area, href, rel),
     (Audio, audio),
     (Base, base, href),
     (Bdi, bdi),
@@ -210,7 +210,7 @@ elements!(
     (Label, label),
     (Legend, legend),
     (Li, li),
-    (Link, link, href),
+    (Link, link, href, rel),
     (Map, map),
     (Mark, mark),
     (Menuitem, menuitem),
