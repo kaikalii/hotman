@@ -5,19 +5,48 @@
 <br>
 ~~hot male~~
 <br>
-`hotman`
+`hotman`.
 
-This crate provides a simple way to generate HTML elements in pure Rust.
+🥵 Simple HTML generation in pure Rust with no macros 🥵
 
-# Basic Example
+# Usage
 
-This example looks better with proper language server syntax highlighting
-because tags are functions and attributes are structs.
+Writing HTML with `hotman` is very similar to writing HTML itself.
+All the same words are there, only the punctuation is different.
+
+## Elements
+
+Html elements are constructed using functions with the same name as the tag (or `<tag>_elem` for tags with the same name as an attribute).
+
+Examples are [`head`], [`body`], [`div`], and [`p`].
+
+## `ElementData`
+
+The [`ElementData`] trait is implemented for any type which adds either attributes or children to an element.
+
+`ElementData` is also implemented for `Option`s, arrays, `Vec`s, some iterators, and tuples of `ElementData`s up to 20.
+
+The element functions all take an `ElementData` as their argument, so you can pass tuples for multiple values.
+
+## Attributes
+
+Attributes are represented by structs with the same name as the attribute. They implement [`ElementData`].
+
+Examples are [`id`], [`href`], [`class`], and [`style`].
+
+# Static Example
+
+This example looks better with proper language server syntax highlighting;
+tags are functions and attributes are structs, so they get different colors.
 ```rust
 use hotman::*;
 
 let dom = html((
-    head((meta(charset("utf-8")), title_elem("Login"))),
+    head((
+        meta(charset("utf-8")),
+        // `title` is the name of an attribute, so we use `title_elem` for the element
+        title_elem("Login"),
+    )),
     body((
         h1("Login"),
         form((
@@ -41,14 +70,21 @@ let dom = html((
 println!("{dom}");
 ```
 
-# Iteration Example
+# Iteration
+
+A blanket implementation of `ElementData` for any `Iterator` would conflict with the implementaiton for tuples.
+
+As a workaround, `ElementData` is implemented for the [`Map`], [`FilterMap`], and [`FlatMap`] iterators.
+
+Because you usually map data to elements anyway, these implementations are usually more than enough.
 
 ```rust
 let number_list = {
     use hotman::*;
     ul((1..=5).map(|i| li(i.to_string())))
 };
-let expected = "\
+
+assert_eq!(number_list.to_string(), "\
 <ul>
     <li>1</li>
     <li>2</li>
@@ -56,8 +92,7 @@ let expected = "\
     <li>4</li>
     <li>5</li>
 </ul>
-";
-assert_eq!(number_list.to_string(), expected);
+");
 ```
 */
 
@@ -76,7 +111,7 @@ use attribute_traits::*;
 use format::*;
 
 /// Trait for types of elements
-pub trait Element: Sized {
+pub trait Element {
     /// Get the children of this element
     fn children(&self) -> &[Node];
     /// Get the mutable children of this element
@@ -111,9 +146,9 @@ macro_rules! elements {
         /// An HTML node
         #[derive(Debug, Clone)]
         pub enum Node {
-            $(#[allow(missing_docs)] $name(element_structs::$name),)*
             /// A text element
             Text(String),
+            $(#[allow(missing_docs)] $name(element_structs::$name),)*
         }
 
         impl fmt::Display for Node {
@@ -140,9 +175,9 @@ macro_rules! elements {
             use super::*;
             $(
                 #[derive(Debug, Clone, Default)]
-                #[doc = "A `<"]
-                #[doc = $tag]
-                #[doc = ">` element"]
+                #[doc = "A"]
+                #[doc = concat!("`<", $tag, ">`")]
+                #[doc = "element"]
                 pub struct $name {
                     /// The `id` attribute
                     pub id: String,
@@ -243,9 +278,9 @@ macro_rules! elements {
 
         $(
             #[must_use]
-            #[doc = "Make a `<"]
-            #[doc = $tag]
-            #[doc = ">` element"]
+            #[doc = "Make a"]
+            #[doc = concat!("`<", $tag, ">`")]
+            #[doc = "element"]
             pub fn $fn_name(elem_data: impl ElementData<element_structs::$name>) -> element_structs::$name {
                 let mut elem = Default::default();
                 elem_data.add_to(&mut elem);

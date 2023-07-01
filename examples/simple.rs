@@ -3,7 +3,11 @@ use hotman::*;
 fn main() {
     // A simple login page
     let dom = html((
-        head((meta(charset("utf-8")), title("Login"))),
+        head((
+            meta(charset("utf-8")),
+            // `title` is the name of an attribute, so we use `title_elem` for the element
+            title_elem("Login"),
+        )),
         body((
             h1("Login"),
             form((
