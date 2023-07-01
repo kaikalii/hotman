@@ -17,7 +17,7 @@ because tags are functions and attributes are structs.
 use hotman::*;
 
 let dom = html((
-    head((meta(charset("utf-8")), title("Login"))),
+    head((meta(charset("utf-8")), title_elem("Login"))),
     body((
         h1("Login"),
         form((
@@ -521,7 +521,7 @@ elements!(
     (Th, th, "th", colspan, headers, rowspan, scope),
     (Thead, thead, "thead"),
     (Time, time, "time", datetime),
-    (Title, title, "title"),
+    (Title, title_elem, "title"),
     (Tr, tr, "tr"),
     (Track, track, "track", default, kind, label, src, srclang),
     (Ul, ul, "ul"),
