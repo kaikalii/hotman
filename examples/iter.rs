@@ -29,13 +29,13 @@ fn main() {
     let users = table((
         style("border-collapse: collapse;"),
         tr((th("ID"), th("Username"), th("Password"))),
-        Iter(users.iter().map(|user| {
+        users.iter().map(|user| {
             tr((
                 td(user.id.to_string()),
                 td(&user.username),
                 td(&user.password),
             ))
-        })),
+        }),
     ));
 
     println!("{users}")

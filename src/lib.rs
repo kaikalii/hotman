@@ -9,7 +9,7 @@
 
 This crate provides a simple way to generate HTML elements in pure Rust.
 
-# Example
+# Basic Example
 
 This example looks better with proper language server syntax highlighting
 because tags are functions and attributes are structs.
@@ -40,12 +40,34 @@ let dom = html((
 ));
 println!("{dom}");
 ```
+
+# Iteration Example
+
+```rust
+let number_list = {
+    use hotman::*;
+    ul((1..=5).map(|i| li(i.to_string())))
+};
+let expected = "\
+<ul>
+    <li>1</li>
+    <li>2</li>
+    <li>3</li>
+    <li>4</li>
+    <li>5</li>
+</ul>
+";
+assert_eq!(number_list.to_string(), expected);
+```
 */
 
 mod attribute;
 mod format;
 
-use std::fmt;
+use std::{
+    fmt,
+    iter::{FilterMap, FlatMap, Map},
+};
 
 use paste::paste;
 
@@ -553,10 +575,6 @@ pub trait ElementData<E> {
     fn add_to(self, element: &mut E);
 }
 
-impl<E> ElementData<E> for () {
-    fn add_to(self, _: &mut E) {}
-}
-
 impl<E, D> ElementData<E> for D
 where
     E: Element,
@@ -609,7 +627,7 @@ macro_rules! tuple_element_data {
         where
             $($T: ElementData<Elem>),*
         {
-            #[allow(non_snake_case)]
+            #[allow(non_snake_case, unused_variables)]
             fn add_to(self, elem: &mut Elem) {
                 let ($($T,)*) = self;
                 $($T.add_to(elem);)*
@@ -618,6 +636,7 @@ macro_rules! tuple_element_data {
     };
 }
 
+tuple_element_data!();
 tuple_element_data!(A);
 tuple_element_data!(A, B);
 tuple_element_data!(A, B, C);
@@ -639,38 +658,38 @@ tuple_element_data!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R);
 tuple_element_data!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S);
 tuple_element_data!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T);
 
-/// An iterator of element data
-///
-/// #example
-/// ```rust
-///
-/// let number_list = {
-///     use hotman::*;
-///     ul(Iter((1..=5).map(|i| li(i.to_string()))))
-/// };
-///
-/// let expected = "\
-/// <ul>
-///     <li>1</li>
-///     <li>2</li>
-///     <li>3</li>
-///     <li>4</li>
-///     <li>5</li>
-/// </ul>
-/// ";
-///
-/// assert_eq!(number_list.to_string(), expected);
-/// ```
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub struct Iter<I>(pub I);
-
-impl<I, E> ElementData<E> for Iter<I>
+impl<I, E, F> ElementData<E> for Map<I, F>
 where
-    I: IntoIterator,
-    I::Item: ElementData<E>,
+    Map<I, F>: Iterator,
+    <Map<I, F> as Iterator>::Item: ElementData<E>,
 {
     fn add_to(self, elem: &mut E) {
-        for child in self.0 {
+        for child in self {
+            child.add_to(elem);
+        }
+    }
+}
+
+impl<I, E, F> ElementData<E> for FilterMap<I, F>
+where
+    FilterMap<I, F>: Iterator,
+    <FilterMap<I, F> as Iterator>::Item: ElementData<E>,
+{
+    fn add_to(self, elem: &mut E) {
+        for child in self {
+            child.add_to(elem);
+        }
+    }
+}
+
+impl<I, E, U, F> ElementData<E> for FlatMap<I, U, F>
+where
+    U: IntoIterator,
+    FlatMap<I, U, F>: Iterator,
+    <FlatMap<I, U, F> as Iterator>::Item: ElementData<E>,
+{
+    fn add_to(self, elem: &mut E) {
+        for child in self {
             child.add_to(elem);
         }
     }
