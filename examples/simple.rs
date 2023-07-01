@@ -7,8 +7,7 @@ fn main() {
         body((
             h1("Login"),
             form((
-                action("/login"),
-                method("POST"),
+                (action("/login"), method("POST")),
                 input((
                     r#type("text"),
                     name("username"),
