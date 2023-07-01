@@ -170,11 +170,7 @@ macro_rules! elements {
                 match self {
                     $(Node::$name(element) => element.indent_fmt(f),)*
                     Node::Text(text) => f.write(text),
-                    Node::Comment(comment) => {
-                        f.write("<!--")?;
-                        f.write(comment)?;
-                        f.writeln("-->")
-                    },
+                    Node::Comment(comment) => f.write(format_args!("<!--{comment}-->")),
                 }
             }
         }
@@ -223,27 +219,26 @@ macro_rules! elements {
                         write_attr!(self, f, itemscope);
                         $(write_attr!(self, f, $attr);)*
                         if self.children.is_empty() {
-                            f.writeln(format_args!(" />"))?;
+                            f.write(format_args!(" />"))?;
                             return Ok(());
                         }
                         f.write(format_args!(">"))?;
-                        let single_child = self.children.len() == 1 && matches!(self.children[0], Node::Text(_));
-                        if single_child {
-                            let child = &self.children[0];
-                            child.indent_fmt(f)?;
-                            f.writeln(format_args!("</{tag}>"))?;
+                        let single_line = self.children.len() == 1 || self.children.iter().any(|node| matches!(node, Node::Text(_)));
+                        if single_line {
+                            for child in &self.children {
+                                child.indent_fmt(f)?;
+                            }
+                            f.write(format_args!("</{tag}>"))?;
                             return Ok(());
                         }
                         f.writeln("")?;
                         f.indent();
                         for child in &self.children {
                             child.indent_fmt(f)?;
+                            f.writeln("")?;
                         }
                         f.dedent();
                         f.write(format_args!("</{tag}>"))?;
-                        if !single_child {
-                            f.writeln("")?;
-                        }
                         Ok(())
                     }
                 }
