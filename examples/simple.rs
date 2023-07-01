@@ -21,6 +21,10 @@ fn main() {
                 )),
                 input((r#type("submit"), value("Login"))),
             )),
+            p((
+                "Don't have an account? ",
+                a((href("/register"), "Register")),
+            )),
         )),
     ));
     println!("{dom}");
