@@ -42,6 +42,7 @@ tags are functions and attributes are structs, so they get different colors.
 use hotman::*;
 
 let dom = html((
+    Comment("A simple login page"),
     head((
         meta(charset("utf-8")),
         // `title` is the name of an attribute, so we use `title_elem` for the element
@@ -148,6 +149,8 @@ macro_rules! elements {
         pub enum Node {
             /// A text element
             Text(String),
+            /// A comment,
+            Comment(String),
             $(#[allow(missing_docs)] $name(element_structs::$name),)*
         }
 
@@ -156,6 +159,7 @@ macro_rules! elements {
                 match self {
                     $(Node::$name(element) => write!(f, "{element}"),)*
                     Node::Text(text) => write!(f, "{text}"),
+                    Node::Comment(comment) => write!(f, "<!--{comment}-->"),
                 }
             }
         }
@@ -165,6 +169,11 @@ macro_rules! elements {
                 match self {
                     $(Node::$name(element) => element.indent_fmt(f),)*
                     Node::Text(text) => f.write(text),
+                    Node::Comment(comment) => {
+                        f.write("<!--")?;
+                        f.write(comment)?;
+                        f.writeln("-->")
+                    },
                 }
             }
         }
@@ -305,6 +314,19 @@ impl From<&str> for Node {
 impl From<&String> for Node {
     fn from(text: &String) -> Self {
         Node::Text(text.to_string())
+    }
+}
+
+/// An HTML comment
+#[derive(Debug, Clone)]
+pub struct Comment<T>(pub T);
+
+impl<T> From<Comment<T>> for Node
+where
+    T: Into<String>,
+{
+    fn from(comment: Comment<T>) -> Self {
+        Node::Comment(comment.0.into())
     }
 }
 

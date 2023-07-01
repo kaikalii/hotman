@@ -14,6 +14,7 @@ because tags are functions and attributes are structs.
 use hotman::*;
 
 let dom = html((
+    Comment("A simple login page"),
     head((meta(charset("utf-8")), title_elem("Login"))),
     body((
         h1("Login"),
