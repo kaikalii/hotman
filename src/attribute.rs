@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::*;
 
 use paste::paste;
@@ -17,6 +19,13 @@ macro_rules! attribute_struct {
             pub(crate) type [<$name _ref_t>] = bool;
             pub(crate) fn [<$name _take_ref>](val: &[<$name _t>]) -> [<$name _ref_t>] {
                 *val
+            }
+            pub(crate) fn [<$name _write>](b: &bool, f: &mut fmt::Formatter) -> fmt::Result {
+                if *b {
+                    write!(f, " {}", stringify!($name).trim_start_matches("r#"))
+                } else {
+                    Ok(())
+                }
             }
         }
         impl $name {
@@ -39,6 +48,13 @@ macro_rules! attribute_struct {
             pub(crate) type [<$name _ref_t>]<'a> = &'a str;
             pub(crate) fn [<$name _take_ref>](val: &[<$name _t>]) -> [<$name _ref_t>] {
                 val
+            }
+            pub(crate) fn [<$name _write>](s: &str, f: &mut fmt::Formatter) -> fmt::Result {
+                if s.is_empty() {
+                    Ok(())
+                } else {
+                    write!(f, " {}=\"{}\"", stringify!($name).trim_start_matches("r#"), s)
+                }
             }
         }
         impl<T> $name<T> {
@@ -115,7 +131,7 @@ attributes!(
     alt,
     autocomplete,
     autofocus[bool],
-    autoplay,
+    autoplay[bool],
     charset,
     checked[bool],
     cite,
@@ -125,24 +141,24 @@ attributes!(
     cols,
     colspan,
     command,
-    controls,
+    controls[bool],
     coords,
     crossorigin,
     data,
     datetime,
     decoding,
-    default,
-    defer,
+    default[bool],
+    defer[bool],
     dir,
     dirname,
-    disabled,
+    disabled[bool],
     download,
     enctype,
     form,
     formaction,
     formenctype,
     formmethod,
-    formnovalidate,
+    formnovalidate[bool],
     formtarget,
     headers,
     height,
@@ -155,7 +171,8 @@ attributes!(
     importance,
     integrity,
     intrinsicsize,
-    ismap,
+    ismap[bool],
+    itemscope[bool],
     kind,
     label,
     list,
@@ -170,13 +187,13 @@ attributes!(
     min_length,
     min,
     minlength,
-    multiple,
-    muted,
+    multiple[bool],
+    muted[bool],
     name,
-    nomodule,
+    nomodule[bool],
     nonce,
     noshade,
-    novalidate,
+    novalidate[bool],
     onafterprint,
     onbeforeprint,
     onbeforeunload,
@@ -193,7 +210,7 @@ attributes!(
     onstorage,
     onunhandledrejection,
     onunload,
-    open,
+    open[bool],
     optimum,
     pattern,
     ping,
@@ -202,21 +219,21 @@ attributes!(
     poster,
     preload,
     profile,
-    r#async,
+    r#async[bool],
     r#for,
-    r#loop,
+    r#loop[bool],
     r#type,
     radiogroup,
-    readonly,
+    readonly[bool],
     referrerpolicy,
     rel,
-    required,
-    reversed,
+    required[bool],
+    reversed[bool],
     rows,
     rowspan,
     sandbox,
     scope,
-    selected,
+    selected[bool],
     shape,
     size,
     sizes,

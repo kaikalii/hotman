@@ -80,26 +80,12 @@ macro_rules! impl_global_attrs {
 
 macro_rules! write_attr {
     ($this:expr, $f:expr, $attr:ident) => {
-        if !$this.$attr.is_empty() {
-            $f.write(format_args!(
-                " {}=\"{}\"",
-                stringify!($attr).trim_start_matches("r#"),
-                $this.$attr
-            ))?;
-        }
-    };
-    ($this:expr, $f:expr, $attr:ident [bool]) => {
-        if $this.$attr {
-            $f.write(format_args!(
-                " {}",
-                stringify!($attr).trim_start_matches("r#")
-            ))?;
-        }
+        paste!([<$attr _write>](&$this.$attr, $f.f)?);
     };
 }
 
 macro_rules! elements {
-    ($(($name:ident, $tag:ident $(,$attr:ident $([$ty:ident])?)* $(,)?)),* $(,)*) => {
+    ($(($name:ident, $tag:ident $(,$attr:ident)* $(,)?)),* $(,)*) => {
         /// An HTML node
         #[derive(Debug, Clone)]
         pub enum Node {
@@ -146,6 +132,8 @@ macro_rules! elements {
                     pub title: String,
                     /// The `autofocus` attribute
                     pub autofocus: bool,
+                    /// The `itemscope` attribute
+                    pub itemscope: bool,
                     $(
                         #[doc = "The `"]
                         #[doc = stringify!($attr)]
@@ -160,22 +148,13 @@ macro_rules! elements {
                     fn indent_fmt(&self, f: &mut IndentFormatter) -> fmt::Result {
                         let tag = stringify!($tag);
                         f.write(format_args!("<{tag}"))?;
-                        if !self.id.is_empty() {
-                            f.write(format_args!(" id=\"{}\"", self.id))?;
-                        }
-                        if !self.class.is_empty() {
-                            f.write(format_args!(" class=\"{}\"", self.class))?;
-                        }
-                        if !self.style.is_empty() {
-                            f.write(format_args!(" style=\"{}\"", self.style))?;
-                        }
-                        if !self.title.is_empty() {
-                            f.write(format_args!(" title=\"{}\"", self.title))?;
-                        }
-                        if self.autofocus {
-                            f.write(format_args!(" autofocus"))?;
-                        }
-                        $(write_attr!(self, f, $attr $([$ty])*);)*
+                        write_attr!(self, f, id);
+                        write_attr!(self, f, class);
+                        write_attr!(self, f, style);
+                        write_attr!(self, f, title);
+                        write_attr!(self, f, autofocus);
+                        write_attr!(self, f, itemscope);
+                        $(write_attr!(self, f, $attr);)*
                         if self.children.is_empty() {
                             f.writeln(format_args!(" />"))?;
                             return Ok(());
@@ -223,7 +202,7 @@ macro_rules! elements {
                     }
                 }
 
-                impl_global_attrs!($name, id, class, style, title, autofocus);
+                impl_global_attrs!($name, id, class, style, title, autofocus, itemscope);
 
                 $(
                     paste! {
@@ -416,7 +395,7 @@ elements!(
         accept,
         alt,
         autocomplete,
-        checked[bool],
+        checked,
         dirname,
         disabled,
         form,
@@ -465,18 +444,7 @@ elements!(
     (Map, map, name),
     (Mark, mark),
     (Menu, menu, r#type, label),
-    (
-        Menuitem,
-        menuitem,
-        checked[bool],
-        command,
-        default,
-        disabled,
-        icon,
-        label,
-        radiogroup,
-        r#type
-    ),
+    (Menuitem, menuitem, checked, command, default, disabled, icon, label, radiogroup, r#type),
     (Meta, meta, charset, http_equiv, name),
     (Meter, meter, high, low, max, min, optimum, value),
     (Noscript, noscript),
