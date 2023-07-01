@@ -10,6 +10,20 @@ macro_rules! attribute_struct {
         #[doc = stringify!($name)]
         #[doc = "` attribute"]
         pub struct $name;
+        paste! {
+            #[allow(non_camel_case_types)]
+            pub(crate) type [<$name _t>] = bool;
+            #[allow(non_camel_case_types)]
+            pub(crate) type [<$name _ref_t>] = bool;
+            pub(crate) fn [<$name _take_ref>](val: &[<$name _t>]) -> [<$name _ref_t>] {
+                *val
+            }
+        }
+        impl $name {
+            fn take(self) -> bool {
+                true
+            }
+        }
     };
     ($name:ident) => {
         #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
@@ -17,62 +31,46 @@ macro_rules! attribute_struct {
         #[doc = "The `"]
         #[doc = stringify!($name)]
         #[doc = "` attribute"]
-        pub struct $name<T>(pub T);
+        pub struct $name<T = String>(pub T);
+        paste! {
+            #[allow(non_camel_case_types)]
+            pub(crate) type [<$name _t>] = String;
+            #[allow(non_camel_case_types)]
+            pub(crate) type [<$name _ref_t>]<'a> = &'a str;
+            pub(crate) fn [<$name _take_ref>](val: &[<$name _t>]) -> [<$name _ref_t>] {
+                val
+            }
+        }
+        impl<T> $name<T> {
+            fn take(self) -> T {
+                self.0
+            }
+        }
     };
 }
 
 macro_rules! attribute_trait {
-    ($name:ident[bool]) => {
+    ($name:ident [bool]) => {
         paste! {
-            #[doc = "Trait for elements that have the `"]
-            #[doc = stringify!($name)]
-            #[doc = "` attribute"]
-            #[allow(non_camel_case_types)]
-            pub trait [<Has_ $name>] {
-                #[doc = "Get the value of the `"]
-                #[doc = stringify!($name)]
-                #[doc = "` attribute"]
-                fn $name(&self) -> bool;
-                #[doc = "Set the value of the `"]
-                #[doc = stringify!($name)]
-                #[doc = "` attribute"]
-                fn [<set_ $name>](&mut self, value: bool);
-            }
-
             impl<E> ElementData<E> for $name
             where
-                E: [<Has_ $name>],
+                E: [<Has_ $name>]
             {
                 fn add_to(self, element: &mut E) {
-                    element.[<set_ $name>](true);
+                    element.[<set_ $name>](self.take());
                 }
             }
         }
     };
     ($name:ident) => {
         paste! {
-            #[doc = "Trait for elements that have the `"]
-            #[doc = stringify!($name)]
-            #[doc = "` attribute"]
-            #[allow(non_camel_case_types)]
-            pub trait [<Has_ $name>] {
-                #[doc = "Get the value of the `"]
-                #[doc = stringify!($name)]
-                #[doc = "` attribute"]
-                fn $name(&self) -> &str;
-                #[doc = "Set the value of the `"]
-                #[doc = stringify!($name)]
-                #[doc = "` attribute"]
-                fn [<set_ $name>](&mut self, value: impl Into<String>);
-            }
-
             impl<E, T> ElementData<E> for $name<T>
             where
                 E: [<Has_ $name>],
                 T: Into<String>,
             {
                 fn add_to(self, element: &mut E) {
-                    element.[<set_ $name>](self.0);
+                    element.[<set_ $name>](self.take());
                 }
             }
         }
@@ -85,7 +83,25 @@ macro_rules! attributes {
         pub mod attribute_traits {
             //! Traits that mark elements as having attributes
             use super::*;
-            $(attribute_trait!($name $([$ty])*);)*
+            $(
+                paste! {
+                    #[doc = "Trait for elements that have the `"]
+                    #[doc = stringify!($name)]
+                    #[doc = "` attribute"]
+                    #[allow(non_camel_case_types)]
+                    pub trait [<Has_ $name>] {
+                        #[doc = "Get the value of the `"]
+                        #[doc = stringify!($name)]
+                        #[doc = "` attribute"]
+                        fn $name(&self) -> [<$name _ref_t>];
+                        #[doc = "Set the value of the `"]
+                        #[doc = stringify!($name)]
+                        #[doc = "` attribute"]
+                        fn [<set_ $name>](&mut self, value: impl Into<[<$name _t>]>);
+                    }
+                }
+                attribute_trait!($name $([$ty])*);
+            )*
         }
     };
 }
@@ -95,12 +111,13 @@ attributes!(
     accept,
     action,
     align,
+    allow,
     alt,
     autocomplete,
     autofocus[bool],
     autoplay,
     charset,
-    checked,
+    checked[bool],
     cite,
     class,
     clear,
@@ -147,10 +164,12 @@ attributes!(
     manifest,
     max_length,
     max,
+    maxlength,
     media,
     method,
     min_length,
     min,
+    minlength,
     multiple,
     muted,
     name,
@@ -195,6 +214,7 @@ attributes!(
     reversed,
     rows,
     rowspan,
+    sandbox,
     scope,
     selected,
     shape,

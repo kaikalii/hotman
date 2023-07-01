@@ -1,7 +1,7 @@
 use std::fmt;
 
 pub struct IndentFormatter<'a, 'b> {
-    f: &'a mut fmt::Formatter<'b>,
+    pub f: &'a mut fmt::Formatter<'b>,
     indent: usize,
     new_line: bool,
 }

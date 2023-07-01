@@ -61,41 +61,45 @@ pub trait Element: Sized {
     fn children_mut(&mut self) -> &mut Vec<Node>;
 }
 
-macro_rules! impl_global_attr {
-    ($name:ident, $attr:ident [bool]) => {
-        paste! {
-            impl [<Has_ $attr>] for $name {
-                fn $attr(&self) -> bool {
-                    self.$attr
-                }
-                fn [<set_ $attr>](&mut self, val: bool) {
-                    self.$attr = val;
-                }
-            }
-        }
-    };
-    ($name:ident, $attr:ident) => {
-        paste! {
-            impl [<Has_ $attr>] for $name {
-                fn $attr(&self) -> &str {
-                    &self.$attr
-                }
-                fn [<set_ $attr>](&mut self, val: impl Into<String>) {
-                    self.$attr = val.into();
-                }
-            }
-        }
-    };
-}
-
 macro_rules! impl_global_attrs {
-    ($name:ident, $($attr:ident $([$ty:ident])?),* $(,)?) => {
-        $(impl_global_attr!($name, $attr $([$ty])*);)*
+    ($name:ident, $($attr:ident),* $(,)?) => {
+        $(
+            paste! {
+                impl [<Has_ $attr>] for $name {
+                    fn $attr(&self) -> [<$attr _ref_t>] {
+                        [<$attr _take_ref>](&self.$attr)
+                    }
+                    fn [<set_ $attr>](&mut self, val: impl Into<[<$attr _t>]>) {
+                        self.$attr = val.into();
+                    }
+                }
+            }
+        )*
     }
 }
 
+macro_rules! write_attr {
+    ($this:expr, $f:expr, $attr:ident) => {
+        if !$this.$attr.is_empty() {
+            $f.write(format_args!(
+                " {}=\"{}\"",
+                stringify!($attr).trim_start_matches("r#"),
+                $this.$attr
+            ))?;
+        }
+    };
+    ($this:expr, $f:expr, $attr:ident [bool]) => {
+        if $this.$attr {
+            $f.write(format_args!(
+                " {}",
+                stringify!($attr).trim_start_matches("r#")
+            ))?;
+        }
+    };
+}
+
 macro_rules! elements {
-    ($(($name:ident, $tag:ident $(,$attr:ident)* $(,)?)),* $(,)*) => {
+    ($(($name:ident, $tag:ident $(,$attr:ident $([$ty:ident])?)* $(,)?)),* $(,)*) => {
         /// An HTML node
         #[derive(Debug, Clone)]
         pub enum Node {
@@ -146,7 +150,7 @@ macro_rules! elements {
                         #[doc = "The `"]
                         #[doc = stringify!($attr)]
                         #[doc = "` attribute"]
-                        pub $attr: String,
+                        pub $attr: paste!([<$attr _t>]),
                     )*
                     /// The children of this element
                     pub children: Vec<Node>,
@@ -171,11 +175,7 @@ macro_rules! elements {
                         if self.autofocus {
                             f.write(format_args!(" autofocus"))?;
                         }
-                        $(
-                            if !self.$attr.is_empty() {
-                                f.write(format_args!(" {}=\"{}\"", stringify!($attr).trim_start_matches("r#"), self.$attr))?;
-                            }
-                        )*
+                        $(write_attr!(self, f, $attr $([$ty])*);)*
                         if self.children.is_empty() {
                             f.writeln(format_args!(" />"))?;
                             return Ok(());
@@ -223,15 +223,15 @@ macro_rules! elements {
                     }
                 }
 
-                impl_global_attrs!($name, id, class, style, title, autofocus[bool]);
+                impl_global_attrs!($name, id, class, style, title, autofocus);
 
                 $(
                     paste! {
                         impl [<Has_ $attr>] for $name {
-                            fn $attr(&self) -> &str {
-                                &self.$attr
+                            fn $attr(&self) -> [<$attr _ref_t>] {
+                                [<$attr _take_ref>](&self.$attr)
                             }
-                            fn [<set_ $attr>](&mut self, val: impl Into<String>) {
+                            fn [<set_ $attr>](&mut self, val: impl Into<[<$attr _t>]>) {
                                 self.$attr = val.into();
                             }
                         }
@@ -379,7 +379,19 @@ elements!(
     (Hr, hr, align, color, noshade, size, width),
     (Html, html, manifest, xmlns),
     (I, i),
-    (Iframe, iframe),
+    (
+        Iframe,
+        iframe,
+        allow,
+        height,
+        loading,
+        name,
+        referrerpolicy,
+        sandbox,
+        src,
+        srcdoc,
+        width
+    ),
     (
         Img,
         img,
@@ -404,7 +416,7 @@ elements!(
         accept,
         alt,
         autocomplete,
-        checked,
+        checked[bool],
         dirname,
         disabled,
         form,
@@ -453,7 +465,18 @@ elements!(
     (Map, map, name),
     (Mark, mark),
     (Menu, menu, r#type, label),
-    (Menuitem, menuitem, checked, command, default, disabled, icon, label, radiogroup, r#type),
+    (
+        Menuitem,
+        menuitem,
+        checked[bool],
+        command,
+        default,
+        disabled,
+        icon,
+        label,
+        radiogroup,
+        r#type
+    ),
     (Meta, meta, charset, http_equiv, name),
     (Meter, meter, high, low, max, min, optimum, value),
     (Noscript, noscript),
@@ -495,6 +518,23 @@ elements!(
     (Tbody, tbody),
     (Td, td, colspan, headers, rowspan),
     (Template, template),
+    (
+        Textarea,
+        textarea,
+        autocomplete,
+        cols,
+        dirname,
+        disabled,
+        form,
+        maxlength,
+        minlength,
+        name,
+        placeholder,
+        readonly,
+        required,
+        rows,
+        wrap
+    ),
     (Tfoot, tfoot),
     (Th, th, colspan, headers, rowspan, scope),
     (Thead, thead),
