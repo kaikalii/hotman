@@ -35,7 +35,8 @@ let dom = html((
             )),
         )),
     )),
-));
+))
+.page();
 
 println!("{dom}");
 ```

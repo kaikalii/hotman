@@ -67,7 +67,8 @@ let dom = html((
             )),
         )),
     )),
-));
+))
+.page();
 println!("{dom}");
 ```
 
@@ -749,5 +750,25 @@ where
         for child in self {
             child.add_to(elem);
         }
+    }
+}
+
+/// A full HTML document.
+///
+/// Automatically adds the `<!DOCTYPE html>` tag.
+#[derive(Debug, Clone)]
+pub struct Page(pub element_structs::Html);
+
+impl fmt::Display for Page {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "<!DOCTYPE html>")?;
+        write!(f, "{}", self.0)
+    }
+}
+
+impl element_structs::Html {
+    /// Prefix the HTML element with `<!DOCTYPE html>`
+    pub fn page(self) -> Page {
+        Page(self)
     }
 }

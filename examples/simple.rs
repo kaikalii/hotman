@@ -26,6 +26,7 @@ fn main() {
                 a((href("/register"), "Register")),
             )),
         )),
-    ));
+    ))
+    .page();
     println!("{dom}");
 }
