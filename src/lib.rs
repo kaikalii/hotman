@@ -5,6 +5,7 @@ This crate provides a simple way to generate HTML elements in pure Rust.
 */
 
 mod attribute;
+mod format;
 
 use std::fmt;
 
@@ -12,6 +13,7 @@ use paste::paste;
 
 pub use attribute::*;
 use attribute_traits::*;
+use format::*;
 
 /// Trait for types of elements
 pub trait Element: Sized {
@@ -21,20 +23,36 @@ pub trait Element: Sized {
     fn children_mut(&mut self) -> &mut Vec<Node>;
 }
 
-macro_rules! impl_global_attrs {
-    ($name:ident, $($attr:ident),* $(,)?) => {
-        $(
-            paste! {
-                impl [<Has_ $attr>] for $name {
-                    fn $attr(&self) -> &str {
-                        &self.$attr
-                    }
-                    fn [<set_ $attr>](&mut self, val: impl Into<String>) {
-                        self.$attr = val.into();
-                    }
+macro_rules! impl_global_attr {
+    ($name:ident, $attr:ident [bool]) => {
+        paste! {
+            impl [<Has_ $attr>] for $name {
+                fn $attr(&self) -> bool {
+                    self.$attr
+                }
+                fn [<set_ $attr>](&mut self, val: bool) {
+                    self.$attr = val;
                 }
             }
-        )*
+        }
+    };
+    ($name:ident, $attr:ident) => {
+        paste! {
+            impl [<Has_ $attr>] for $name {
+                fn $attr(&self) -> &str {
+                    &self.$attr
+                }
+                fn [<set_ $attr>](&mut self, val: impl Into<String>) {
+                    self.$attr = val.into();
+                }
+            }
+        }
+    };
+}
+
+macro_rules! impl_global_attrs {
+    ($name:ident, $($attr:ident $([$ty:ident])?),* $(,)?) => {
+        $(impl_global_attr!($name, $attr $([$ty])*);)*
     }
 }
 
@@ -57,6 +75,15 @@ macro_rules! elements {
             }
         }
 
+        impl IndentFormat for Node {
+            fn indent_fmt(&self, f: &mut IndentFormatter) -> fmt::Result {
+                match self {
+                    $(Node::$name(element) => element.indent_fmt(f),)*
+                    Node::Text(text) => f.write(text),
+                }
+            }
+        }
+
         pub mod element_structs {
             //! Structs that represent HTML elements
 
@@ -75,6 +102,8 @@ macro_rules! elements {
                     pub style: String,
                     /// The `title` attribute
                     pub title: String,
+                    /// The `autofocus` attribute
+                    pub autofocus: bool,
                     $(
                         #[doc = "The `"]
                         #[doc = stringify!($attr)]
@@ -85,21 +114,59 @@ macro_rules! elements {
                     pub children: Vec<Node>,
                 }
 
-                impl fmt::Display for $name {
-                    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                impl IndentFormat for $name {
+                    fn indent_fmt(&self, f: &mut IndentFormatter) -> fmt::Result {
                         let tag = stringify!($tag);
-                        write!(f, "<{tag}")?;
+                        f.write(format_args!("<{tag}"))?;
+                        if !self.id.is_empty() {
+                            f.write(format_args!(" id=\"{}\"", self.id))?;
+                        }
+                        if !self.class.is_empty() {
+                            f.write(format_args!(" class=\"{}\"", self.class))?;
+                        }
+                        if !self.style.is_empty() {
+                            f.write(format_args!(" style=\"{}\"", self.style))?;
+                        }
+                        if !self.title.is_empty() {
+                            f.write(format_args!(" title=\"{}\"", self.title))?;
+                        }
+                        if self.autofocus {
+                            f.write(format_args!(" autofocus"))?;
+                        }
                         $(
                             if !self.$attr.is_empty() {
-                                write!(f, " {}=\"{}\"", stringify!($attr).trim_start_matches("r#"), self.$attr)?;
+                                f.write(format_args!(" {}=\"{}\"", stringify!($attr).trim_start_matches("r#"), self.$attr))?;
                             }
                         )*
-                        write!(f, ">")?;
-                        for child in &self.children {
-                            write!(f, "{child}")?;
+                        if self.children.is_empty() {
+                            f.writeln(format_args!(" />"))?;
+                            return Ok(());
                         }
-                        write!(f, "</{tag}>")?;
+                        f.write(format_args!(">"))?;
+                        let single_child = self.children.len() == 1 && matches!(self.children[0], Node::Text(_));
+                        if single_child {
+                            let child = &self.children[0];
+                            child.indent_fmt(f)?;
+                            f.writeln(format_args!("</{tag}>"))?;
+                            return Ok(());
+                        }
+                        f.writeln("")?;
+                        f.indent();
+                        for child in &self.children {
+                            child.indent_fmt(f)?;
+                        }
+                        f.dedent();
+                        f.write(format_args!("</{tag}>"))?;
+                        if !single_child {
+                            f.writeln("")?;
+                        }
                         Ok(())
+                    }
+                }
+
+                impl fmt::Display for $name {
+                    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                        self.indent_fmt(&mut IndentFormatter::from(f))
                     }
                 }
 
@@ -118,7 +185,7 @@ macro_rules! elements {
                     }
                 }
 
-                impl_global_attrs!($name, id, class, style, title);
+                impl_global_attrs!($name, id, class, style, title, autofocus[bool]);
 
                 $(
                     paste! {
@@ -225,7 +292,6 @@ elements!(
     (
         Button,
         button,
-        autofocus,
         disabled,
         form,
         formaction,
@@ -300,7 +366,6 @@ elements!(
         accept,
         alt,
         autocomplete,
-        autofocus,
         checked,
         dirname,
         disabled,
@@ -378,7 +443,7 @@ elements!(
         r#type,
         src
     ),
-    (Select, select, autofocus, disabled, form, multiple, name, required, size),
+    (Select, select, disabled, form, multiple, name, required, size),
     (Slot, slot, name),
     (Small, small),
     (Source, source, media, sizes, src, srcset, r#type),

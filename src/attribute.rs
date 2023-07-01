@@ -2,48 +2,90 @@ use crate::*;
 
 use paste::paste;
 
-macro_rules! attributes {
-    ($($name:ident),* $(,)?) => {
-        $(
-            #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-            #[allow(non_camel_case_types)]
-            #[doc = "The `"]
+macro_rules! attribute_struct {
+    ($name:ident[bool]) => {
+        #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+        #[allow(non_camel_case_types)]
+        #[doc = "The `"]
+        #[doc = stringify!($name)]
+        #[doc = "` attribute"]
+        pub struct $name;
+    };
+    ($name:ident) => {
+        #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+        #[allow(non_camel_case_types)]
+        #[doc = "The `"]
+        #[doc = stringify!($name)]
+        #[doc = "` attribute"]
+        pub struct $name<T>(pub T);
+    };
+}
+
+macro_rules! attribute_trait {
+    ($name:ident[bool]) => {
+        paste! {
+            #[doc = "Trait for elements that have the `"]
             #[doc = stringify!($name)]
             #[doc = "` attribute"]
-            pub struct $name<T>(pub T);
-        )*
+            #[allow(non_camel_case_types)]
+            pub trait [<Has_ $name>] {
+                #[doc = "Get the value of the `"]
+                #[doc = stringify!($name)]
+                #[doc = "` attribute"]
+                fn $name(&self) -> bool;
+                #[doc = "Set the value of the `"]
+                #[doc = stringify!($name)]
+                #[doc = "` attribute"]
+                fn [<set_ $name>](&mut self, value: bool);
+            }
+
+            impl<E> ElementData<E> for $name
+            where
+                E: [<Has_ $name>],
+            {
+                fn add_to(self, element: &mut E) {
+                    element.[<set_ $name>](true);
+                }
+            }
+        }
+    };
+    ($name:ident) => {
+        paste! {
+            #[doc = "Trait for elements that have the `"]
+            #[doc = stringify!($name)]
+            #[doc = "` attribute"]
+            #[allow(non_camel_case_types)]
+            pub trait [<Has_ $name>] {
+                #[doc = "Get the value of the `"]
+                #[doc = stringify!($name)]
+                #[doc = "` attribute"]
+                fn $name(&self) -> &str;
+                #[doc = "Set the value of the `"]
+                #[doc = stringify!($name)]
+                #[doc = "` attribute"]
+                fn [<set_ $name>](&mut self, value: impl Into<String>);
+            }
+
+            impl<E, T> ElementData<E> for $name<T>
+            where
+                E: [<Has_ $name>],
+                T: Into<String>,
+            {
+                fn add_to(self, element: &mut E) {
+                    element.[<set_ $name>](self.0);
+                }
+            }
+        }
+    };
+}
+
+macro_rules! attributes {
+    ($($name:ident $([$ty:ident])?),* $(,)?) => {
+        $(attribute_struct!($name $([$ty])*);)*
         pub mod attribute_traits {
             //! Traits that mark elements as having attributes
-
             use super::*;
-            $(
-                paste! {
-                    #[doc = "Trait for elements that have the `"]
-                    #[doc = stringify!($name)]
-                    #[doc = "` attribute"]
-                    #[allow(non_camel_case_types)]
-                    pub trait [<Has_ $name>] {
-                        #[doc = "Get the value of the `"]
-                        #[doc = stringify!($name)]
-                        #[doc = "` attribute"]
-                        fn $name(&self) -> &str;
-                        #[doc = "Set the value of the `"]
-                        #[doc = stringify!($name)]
-                        #[doc = "` attribute"]
-                        fn [<set_ $name>](&mut self, value: impl Into<String>);
-                    }
-
-                    impl<E, T> ElementData<E> for $name<T>
-                    where
-                        E: [<Has_ $name>],
-                        T: Into<String>,
-                    {
-                        fn add_to(self, element: &mut E) {
-                            element.[<set_ $name>](self.0);
-                        }
-                    }
-                }
-            )*
+            $(attribute_trait!($name $([$ty])*);)*
         }
     };
 }
@@ -55,7 +97,7 @@ attributes!(
     align,
     alt,
     autocomplete,
-    autofocus,
+    autofocus[bool],
     autoplay,
     charset,
     checked,
