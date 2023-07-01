@@ -21,17 +21,13 @@ let dom = html((
             // Attributes can be grouped, but it's not required
             (action("/login"), method("POST")),
             input((
-                r#type("text"),
+                type_("text"),
                 name("username"),
                 placeholder("Username"),
                 autofocus,
             )),
-            input((
-                r#type("password"),
-                name("password"),
-                placeholder("Password"),
-            )),
-            input((r#type("submit"), value("Login"))),
+            input((type_("password"), name("password"), placeholder("Password"))),
+            input((type_("submit"), value("Login"))),
             p((
                 "Don't have an account? ",
                 a((href("/register"), "Register")),

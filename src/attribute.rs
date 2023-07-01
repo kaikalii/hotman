@@ -17,12 +17,14 @@ macro_rules! attribute_struct {
             pub(crate) type [<$name _t>] = bool;
             #[allow(non_camel_case_types)]
             pub(crate) type [<$name _ref_t>] = bool;
+            #[allow(non_snake_case)]
             pub(crate) fn [<$name _take_ref>](val: &[<$name _t>]) -> [<$name _ref_t>] {
                 *val
             }
+            #[allow(non_snake_case)]
             pub(crate) fn [<$name _write>](b: &bool, f: &mut fmt::Formatter) -> fmt::Result {
                 if *b {
-                    write!(f, " {}", stringify!($name).trim_start_matches("r#"))
+                    write!(f, " {}", stringify!($name).trim_end_matches('_'))
                 } else {
                     Ok(())
                 }
@@ -46,14 +48,16 @@ macro_rules! attribute_struct {
             pub(crate) type [<$name _t>] = String;
             #[allow(non_camel_case_types)]
             pub(crate) type [<$name _ref_t>]<'a> = &'a str;
+            #[allow(non_snake_case)]
             pub(crate) fn [<$name _take_ref>](val: &[<$name _t>]) -> [<$name _ref_t>] {
                 val
             }
+            #[allow(non_snake_case)]
             pub(crate) fn [<$name _write>](s: &str, f: &mut fmt::Formatter) -> fmt::Result {
                 if s.is_empty() {
                     Ok(())
                 } else {
-                    write!(f, " {}=\"{}\"", stringify!($name).trim_start_matches("r#"), s)
+                    write!(f, " {}=\"{}\"", stringify!($name).trim_end_matches('_'), s)
                 }
             }
         }
@@ -219,10 +223,10 @@ attributes!(
     poster,
     preload,
     profile,
-    r#async[bool],
-    r#for,
-    r#loop[bool],
-    r#type,
+    async_[bool],
+    for_,
+    loop_[bool],
+    type_,
     radiogroup,
     readonly[bool],
     referrerpolicy,
