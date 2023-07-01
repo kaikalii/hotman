@@ -85,7 +85,7 @@ macro_rules! write_attr {
 }
 
 macro_rules! elements {
-    ($(($name:ident, $tag:ident $(,$attr:ident)* $(,)?)),* $(,)*) => {
+    ($(($name:ident, $fn_name:ident, $tag:literal $(,$attr:ident)* $(,)?)),* $(,)*) => {
         /// An HTML node
         #[derive(Debug, Clone)]
         pub enum Node {
@@ -118,9 +118,9 @@ macro_rules! elements {
             use super::*;
             $(
                 #[derive(Debug, Clone, Default)]
-                #[doc = "A `"]
-                #[doc = stringify!($tag)]
-                #[doc = "` element"]
+                #[doc = "A `<"]
+                #[doc = $tag]
+                #[doc = ">` element"]
                 pub struct $name {
                     /// The `id` attribute
                     pub id: String,
@@ -146,7 +146,7 @@ macro_rules! elements {
 
                 impl IndentFormat for $name {
                     fn indent_fmt(&self, f: &mut IndentFormatter) -> fmt::Result {
-                        let tag = stringify!($tag);
+                        let tag = $tag;
                         f.write(format_args!("<{tag}"))?;
                         write_attr!(self, f, id);
                         write_attr!(self, f, class);
@@ -221,10 +221,10 @@ macro_rules! elements {
 
         $(
             #[must_use]
-            #[doc = "Make a `"]
-            #[doc = stringify!($tag)]
-            #[doc = "` element"]
-            pub fn $tag(elem_data: impl ElementData<element_structs::$name>) -> element_structs::$name {
+            #[doc = "Make a `<"]
+            #[doc = $tag]
+            #[doc = ">` element"]
+            pub fn $fn_name(elem_data: impl ElementData<element_structs::$name>) -> element_structs::$name {
                 let mut elem = Default::default();
                 elem_data.add_to(&mut elem);
                 elem
@@ -255,6 +255,7 @@ elements!(
     (
         A,
         a,
+        "a",
         download,
         href,
         hreflang,
@@ -264,10 +265,11 @@ elements!(
         target,
         type_,
     ),
-    (Abbr, abbr),
+    (Abbr, abbr, "abbr"),
     (
         Area,
         area,
+        "area",
         alt,
         coords,
         download,
@@ -279,15 +281,16 @@ elements!(
         shape,
         target
     ),
-    (Audio, audio, autoplay, controls, loop_, muted, preload, src),
-    (B, b),
-    (Base, base, href, target),
-    (Bdi, bdi, dir),
-    (Bdo, bdo, dir),
-    (Blockquote, blockquote, cite),
+    (Audio, audio, "audio", autoplay, controls, loop_, muted, preload, src),
+    (B, b, "b"),
+    (Base, base, "base", href, target),
+    (Bdi, bdi, "bdi", dir),
+    (Bdo, bdo, "bdo", dir),
+    (Blockquote, blockquote, "blockquote", cite),
     (
         Body,
         body,
+        "body",
         onafterprint,
         onbeforeprint,
         onbeforeunload,
@@ -305,10 +308,11 @@ elements!(
         onunhandledrejection,
         onunload
     ),
-    (Br, br, clear),
+    (Br, br, "br", clear),
     (
         Button,
         button,
+        "button",
         disabled,
         form,
         formaction,
@@ -320,25 +324,26 @@ elements!(
         type_,
         value
     ),
-    (Canvas, canvas, height, width),
-    (Caption, caption),
-    (Cite, cite),
-    (Code, code, type_),
-    (Col, col, span),
-    (Colgroup, colgroup, span),
-    (Dd, dd, type_),
-    (Del, del, cite, datetime),
-    (Details, details, open),
-    (Dfn, dfn),
-    (Div, div),
-    (Dl, dl, type_),
-    (Dt, dt, type_),
-    (Em, em, type_),
-    (Embed, embed, height, src, type_, width),
-    (Fieldset, fieldset, disabled, form, name),
+    (Canvas, canvas, "canvas", height, width),
+    (Caption, caption, "caption"),
+    (Cite, cite, "cite"),
+    (Code, code, "code", type_),
+    (Col, col, "col", span),
+    (Colgroup, colgroup, "colgroup", span),
+    (Dd, dd, "dd", type_),
+    (Del, del, "del", cite, datetime),
+    (Details, details, "details", open),
+    (Dfn, dfn, "dfn"),
+    (Div, div, "div"),
+    (Dl, dl, "dl", type_),
+    (Dt, dt, "dt", type_),
+    (Em, em, "em", type_),
+    (Embed, embed, "embed", height, src, type_, width),
+    (Fieldset, fieldset, "fieldset", disabled, form, name),
     (
         Form,
         form,
+        "form",
         accept_charset,
         action,
         autocomplete,
@@ -348,19 +353,20 @@ elements!(
         novalidate,
         target
     ),
-    (H1, h1),
-    (H2, h2),
-    (H3, h3),
-    (H4, h4),
-    (H5, h5),
-    (H6, h6),
-    (Head, head, profile),
-    (Hr, hr, align, color, noshade, size, width),
-    (Html, html, manifest, xmlns),
-    (I, i),
+    (H1, h1, "h1"),
+    (H2, h2, "h2"),
+    (H3, h3, "h3"),
+    (H4, h4, "h4"),
+    (H5, h5, "h5"),
+    (H6, h6, "h6"),
+    (Head, head, "head", profile),
+    (Hr, hr, "hr", align, color, noshade, size, width),
+    (Html, html, "html", manifest, xmlns),
+    (I, i, "i"),
     (
         Iframe,
         iframe,
+        "iframe",
         allow,
         height,
         loading,
@@ -374,6 +380,7 @@ elements!(
     (
         Img,
         img,
+        "img",
         alt,
         crossorigin,
         decoding,
@@ -392,6 +399,7 @@ elements!(
     (
         Input,
         input,
+        "input",
         accept,
         alt,
         autocomplete,
@@ -423,14 +431,15 @@ elements!(
         value,
         width
     ),
-    (Ins, ins, cite, datetime),
-    (Kbd, kbd),
-    (Label, label, for_),
-    (Legend, legend),
-    (Li, li, value),
+    (Ins, ins, "ins", cite, datetime),
+    (Kbd, kbd, "kbd"),
+    (Label, label, "label", for_),
+    (Legend, legend, "legend"),
+    (Li, li, "li", value),
     (
         Link,
         link,
+        "link",
         href,
         rel,
         media,
@@ -441,27 +450,31 @@ elements!(
         integrity,
         referrerpolicy
     ),
-    (Map, map, name),
-    (Mark, mark),
-    (Menu, menu, type_, label),
-    (Menuitem, menuitem, checked, command, default, disabled, icon, label, radiogroup, type_),
-    (Meta, meta, charset, http_equiv, name),
-    (Meter, meter, high, low, max, min, optimum, value),
-    (Noscript, noscript),
-    (Object, object, data, form, height, name, type_, usemap, width),
-    (Ol, ol, reversed, start, type_),
-    (Option, option, disabled, label, selected, value),
-    (Output, output, for_, form, name),
-    (P, p),
-    (Param, param, name, value),
-    (Progress, progress, max, value),
-    (Q, q, cite),
-    (Rp, rp),
-    (Rt, rt),
-    (Samp, samp),
+    (Map, map, "map", name),
+    (Mark, mark, "mark"),
+    (Menu, menu, "menu", type_, label),
+    (
+        Menuitem, menuitem, "menuitem", checked, command, default, disabled, icon, label,
+        radiogroup, type_
+    ),
+    (Meta, meta, "meta", charset, http_equiv, name),
+    (Meter, meter, "meter", high, low, max, min, optimum, value),
+    (Noscript, noscript, "noscript"),
+    (Object, object, "object", data, form, height, name, type_, usemap, width),
+    (Ol, ol, "ol", reversed, start, type_),
+    (Option, option, "option", disabled, label, selected, value),
+    (Output, output, "output", for_, form, name),
+    (P, p, "p"),
+    (Param, param, "param", name, value),
+    (Progress, progress, "progress", max, value),
+    (Q, q, "q", cite),
+    (Rp, rp, "rp"),
+    (Rt, rt, "rt"),
+    (Samp, samp, "samp"),
     (
         Script,
         script,
+        "script",
         async_,
         crossorigin,
         defer,
@@ -472,23 +485,24 @@ elements!(
         type_,
         src
     ),
-    (Select, select, disabled, form, multiple, name, required, size),
-    (Slot, slot, name),
-    (Small, small),
-    (Source, source, media, sizes, src, srcset, type_),
-    (Span, span),
-    (Strong, strong),
-    (Style, style, media, nonce, type_),
-    (Sub, sub),
-    (Summary, summary),
-    (Sup, sup),
-    (Table, table),
-    (Tbody, tbody),
-    (Td, td, colspan, headers, rowspan),
-    (Template, template),
+    (Select, select, "select", disabled, form, multiple, name, required, size),
+    (Slot, slot, "slot", name),
+    (Small, small, "small"),
+    (Source, source, "source", media, sizes, src, srcset, type_),
+    (Span, span, "span"),
+    (Strong, strong, "strong"),
+    (Style, style_elem, "style", media, nonce, type_),
+    (Sub, sub, "sub"),
+    (Summary, summary, "summary"),
+    (Sup, sup, "sup"),
+    (Table, table, "table"),
+    (Tbody, tbody, "tbody"),
+    (Td, td, "td", colspan, headers, rowspan),
+    (Template, template, "template"),
     (
         Textarea,
         textarea,
+        "textarea",
         autocomplete,
         cols,
         dirname,
@@ -503,18 +517,19 @@ elements!(
         rows,
         wrap
     ),
-    (Tfoot, tfoot),
-    (Th, th, colspan, headers, rowspan, scope),
-    (Thead, thead),
-    (Time, time, datetime),
-    (Title, title),
-    (Tr, tr),
-    (Track, track, default, kind, label, src, srclang),
-    (Ul, ul),
-    (Var, var),
+    (Tfoot, tfoot, "tfoot"),
+    (Th, th, "th", colspan, headers, rowspan, scope),
+    (Thead, thead, "thead"),
+    (Time, time, "time", datetime),
+    (Title, title, "title"),
+    (Tr, tr, "tr"),
+    (Track, track, "track", default, kind, label, src, srclang),
+    (Ul, ul, "ul"),
+    (Var, var, "var"),
     (
         Video,
         video,
+        "video",
         autoplay,
         controls,
         crossorigin,
@@ -527,7 +542,7 @@ elements!(
         src,
         width
     ),
-    (Wbr, wbr),
+    (Wbr, wbr, "wbr"),
 );
 
 /// A piece of data that can be added to an element
@@ -623,3 +638,40 @@ tuple_element_data!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q);
 tuple_element_data!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R);
 tuple_element_data!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S);
 tuple_element_data!(A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T);
+
+/// An iterator of element data
+///
+/// #example
+/// ```rust
+///
+/// let number_list = {
+///     use hotman::*;
+///     ul(Iter((1..=5).map(|i| li(i.to_string()))))
+/// };
+///
+/// let expected = "\
+/// <ul>
+///     <li>1</li>
+///     <li>2</li>
+///     <li>3</li>
+///     <li>4</li>
+///     <li>5</li>
+/// </ul>
+/// ";
+///
+/// assert_eq!(number_list.to_string(), expected);
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct Iter<I>(pub I);
+
+impl<I, E> ElementData<E> for Iter<I>
+where
+    I: IntoIterator,
+    I::Item: ElementData<E>,
+{
+    fn add_to(self, elem: &mut E) {
+        for child in self.0 {
+            child.add_to(elem);
+        }
+    }
+}
