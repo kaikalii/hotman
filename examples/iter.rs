@@ -27,7 +27,7 @@ fn main() {
     ];
 
     let users = table((
-        style("border-collapse: collapse;"),
+        Style("border-collapse: collapse;"),
         tr((th("ID"), th("Username"), th("Password"))),
         users.iter().map(|user| {
             tr((
