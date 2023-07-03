@@ -15,24 +15,23 @@ use hotman::*;
 
 let dom = html((
     Comment("A simple login page"),
-    head((meta(charset("utf-8")), title_elem("Login"))),
+    head((meta(Charset("utf-8")), title("Login"))),
     body((
         h1("Login"),
         form((
-            // Attributes can be grouped, but it's not required
-            (action("/login"), method("POST")),
+            (Action("/login"), Method("POST")),
             input((
-                type_("text"),
-                name("username"),
-                placeholder("Username"),
-                autofocus,
+                Type("text"),
+                Name("username"),
+                Placeholder("Username"),
+                Autofocus,
             )),
-            input((type_("password"), name("password"), placeholder("Password"))),
-            input((type_("submit"), value("Login"))),
-            p((
-                "Don't have an account? ",
-                a((href("/register"), "Register")),
-            )),
+            input((Type("password"), Name("password"), Placeholder("Password"))),
+            input((Type("submit"), Value("Login"))),
+        )),
+        p((
+            "Don't have an account? ",
+            a((Href("/register"), "Register")),
         )),
     )),
 ))

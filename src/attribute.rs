@@ -5,7 +5,7 @@ use crate::*;
 use paste::paste;
 
 macro_rules! attribute_struct {
-    ($name:ident[bool]) => {
+    ($name:tt[bool]) => {
         paste! {
             #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
             #[doc = "The `"]
@@ -35,7 +35,7 @@ macro_rules! attribute_struct {
             }
         }
     };
-    ($name:ident) => {
+    ($name:tt) => {
         paste! {
             #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
             #[allow(non_camel_case_types)]
@@ -69,7 +69,7 @@ macro_rules! attribute_struct {
 }
 
 macro_rules! attribute_trait {
-    ($name:ident [bool]) => {
+    ($name:tt [bool]) => {
         paste! {
             impl<E> ElementData<E> for [<$name:camel>]
             where
@@ -81,7 +81,7 @@ macro_rules! attribute_trait {
             }
         }
     };
-    ($name:ident) => {
+    ($name:tt) => {
         paste! {
             impl<E, T> ElementData<E> for [<$name:camel>]<T>
             where
@@ -97,7 +97,7 @@ macro_rules! attribute_trait {
 }
 
 macro_rules! attributes {
-    ($($name:ident $([$ty:ident])?),* $(,)?) => {
+    ($($name:tt $([$ty:ident])?),* $(,)?) => {
         $(attribute_struct!($name $([$ty])*);)*
         pub mod attribute_traits {
             //! Traits that mark elements as having attributes
@@ -112,7 +112,7 @@ macro_rules! attributes {
                         #[doc = "Get the value of the `"]
                         #[doc = stringify!($name)]
                         #[doc = "` attribute"]
-                        fn $name(&self) -> [<$name _ref_t>];
+                        fn [<get_ $name>](&self) -> [<$name _ref_t>];
                         #[doc = "Set the value of the `"]
                         #[doc = stringify!($name)]
                         #[doc = "` attribute"]
@@ -222,10 +222,10 @@ attributes!(
     poster,
     preload,
     profile,
-    r#async[bool],
-    r#for,
-    r#loop[bool],
-    r#type,
+    async[bool],
+    for,
+    loop[bool],
+    type,
     radiogroup,
     readonly[bool],
     referrerpolicy,

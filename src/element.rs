@@ -17,7 +17,7 @@ macro_rules! impl_global_attrs {
         $(
             paste! {
                 impl attribute_traits::[<Has $attr:camel>] for $name {
-                    fn $attr(&self) -> attribute::[<$attr _ref_t>] {
+                    fn [<get_ $attr>](&self) -> attribute::[<$attr _ref_t>] {
                         attribute::[<$attr _take_ref>](&self.$attr)
                     }
                     fn [<set_ $attr>](&mut self, val: impl Into<attribute::[<$attr _t>]>) {
@@ -89,9 +89,7 @@ macro_rules! elements {
                         /// The `itemscope` attribute
                         pub itemscope: bool,
                         $(
-                            #[doc = "The `"]
-                            #[doc = stringify!($attr)]
-                            #[doc = "` attribute"]
+                            #[doc = "The `" $attr "` attribute"]
                             pub $attr: attribute::[<$attr _t>],
                         )*
                         /// The children of this element
@@ -101,7 +99,7 @@ macro_rules! elements {
 
                 impl IndentFormat for $name {
                     fn indent_fmt(&self, f: &mut IndentFormatter) -> fmt::Result {
-                        let tag = stringify!(paste!([<$name:lower>]));
+                        let tag = paste!(stringify!([<$name:lower>]));
                         f.write(format_args!("<{tag}"))?;
                         write_attr!(self, f, id);
                         write_attr!(self, f, class);
@@ -161,7 +159,7 @@ macro_rules! elements {
                 $(
                     paste! {
                         impl attribute_traits::[<Has $attr:camel>] for $name {
-                            fn $attr(&self) -> attribute::[<$attr _ref_t>] {
+                            fn [<get_ $attr>](&self) -> attribute::[<$attr _ref_t>] {
                                 attribute::[<$attr _take_ref>](&self.$attr)
                             }
                             fn [<set_ $attr>](&mut self, val: impl Into<attribute::[<$attr _t>]>) {
