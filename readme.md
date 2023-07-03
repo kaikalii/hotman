@@ -8,8 +8,6 @@ This crate provides a simple way to generate HTML elements in pure Rust.
 
 # Example
 
-This example looks better with proper language server syntax highlighting
-because tags are functions and attributes are structs.
 ```rust
 use hotman::*;
 

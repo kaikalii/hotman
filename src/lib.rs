@@ -32,12 +32,10 @@ The element functions all take an `ElementData` as their argument, so you can pa
 
 Attributes are represented by structs with the same name as the attribute. They implement [`ElementData`].
 
-Examples are [`id`], [`href`], [`class`], and [`style`].
+Examples are [`Id`], [`Href`], [`Class`], and [`Style`].
 
 # Static Example
 
-This example looks better with proper language server syntax highlighting;
-tags are functions and attributes are structs, so they get different colors.
 ```rust
 use hotman::*;
 
@@ -70,7 +68,7 @@ println!("{dom}");
 
 # Iteration
 
-A blanket implementation of `ElementData` for any `Iterator` would conflict with the implementaiton for tuples.
+A blanket implementation of [`ElementData`] for any `Iterator` would conflict with the implementaiton for tuples.
 
 As a workaround, `ElementData` is implemented for the [`Map`], [`FilterMap`], and [`FlatMap`] iterators.
 
