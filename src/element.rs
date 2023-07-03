@@ -16,7 +16,7 @@ macro_rules! impl_global_attrs {
     ($name:ident, $($attr:ident),* $(,)?) => {
         $(
             paste! {
-                impl attribute_traits::[<Has_ $attr>] for $name {
+                impl attribute_traits::[<Has $attr:camel>] for $name {
                     fn $attr(&self) -> attribute::[<$attr _ref_t>] {
                         attribute::[<$attr _take_ref>](&self.$attr)
                     }
@@ -36,7 +36,7 @@ macro_rules! write_attr {
 }
 
 macro_rules! elements {
-    ($(($name:ident, $fn_name:ident, $tag:literal $(,$attr:ident)* $(,)?)),* $(,)*) => {
+    ($(($name:ident $(,$attr:ident)* $(,)?)),* $(,)*) => {
         /// An HTML node
         #[derive(Debug, Clone)]
         pub enum Node {
@@ -72,36 +72,36 @@ macro_rules! elements {
 
             use super::*;
             $(
-                #[derive(Debug, Clone, Default)]
-                #[doc = "A"]
-                #[doc = concat!("`<", $tag, ">`")]
-                #[doc = "element"]
-                pub struct $name {
-                    /// The `id` attribute
-                    pub id: String,
-                    /// The `class` attribute
-                    pub class: String,
-                    /// The `style` attribute
-                    pub style: String,
-                    /// The `title` attribute
-                    pub title: String,
-                    /// The `autofocus` attribute
-                    pub autofocus: bool,
-                    /// The `itemscope` attribute
-                    pub itemscope: bool,
-                    $(
-                        #[doc = "The `"]
-                        #[doc = stringify!($attr)]
-                        #[doc = "` attribute"]
-                        pub $attr: paste!(attribute::[<$attr _t>]),
-                    )*
-                    /// The children of this element
-                    pub children: Vec<Node>,
+                paste! {
+                    #[derive(Debug, Clone, Default)]
+                    #[doc = "A `<" [<$name:lower>] ">` element"]
+                    pub struct $name {
+                        /// The `id` attribute
+                        pub id: String,
+                        /// The `class` attribute
+                        pub class: String,
+                        /// The `style` attribute
+                        pub style: String,
+                        /// The `title` attribute
+                        pub title: String,
+                        /// The `autofocus` attribute
+                        pub autofocus: bool,
+                        /// The `itemscope` attribute
+                        pub itemscope: bool,
+                        $(
+                            #[doc = "The `"]
+                            #[doc = stringify!($attr)]
+                            #[doc = "` attribute"]
+                            pub $attr: attribute::[<$attr _t>],
+                        )*
+                        /// The children of this element
+                        pub children: Vec<Node>,
+                    }
                 }
 
                 impl IndentFormat for $name {
                     fn indent_fmt(&self, f: &mut IndentFormatter) -> fmt::Result {
-                        let tag = $tag;
+                        let tag = stringify!(paste!([<$name:lower>]));
                         f.write(format_args!("<{tag}"))?;
                         write_attr!(self, f, id);
                         write_attr!(self, f, class);
@@ -160,7 +160,7 @@ macro_rules! elements {
 
                 $(
                     paste! {
-                        impl attribute_traits::[<Has_ $attr>] for $name {
+                        impl attribute_traits::[<Has $attr:camel>] for $name {
                             fn $attr(&self) -> attribute::[<$attr _ref_t>] {
                                 attribute::[<$attr _take_ref>](&self.$attr)
                             }
@@ -173,17 +173,15 @@ macro_rules! elements {
             )*
         }
 
-        $(
+        $(paste! {
             #[must_use]
-            #[doc = "Make a <"]
-            #[doc = $tag]
-            #[doc = "> element"]
-            pub fn $fn_name(elem_data: impl ElementData<element_structs::$name>) -> element_structs::$name {
+            #[doc = "Make a `<" [<$name:lower>] ">` element"]
+            pub fn [<$name:lower>](elem_data: impl ElementData<element_structs::$name>) -> element_structs::$name {
                 let mut elem = Default::default();
                 elem_data.add_to(&mut elem);
                 elem
             }
-        )*
+        })*
     };
 }
 
@@ -221,8 +219,6 @@ where
 elements!(
     (
         A,
-        a,
-        "a",
         download,
         href,
         hreflang,
@@ -232,11 +228,9 @@ elements!(
         target,
         r#type,
     ),
-    (Abbr, abbr, "abbr"),
+    (Abbr),
     (
         Area,
-        area,
-        "area",
         alt,
         coords,
         download,
@@ -248,16 +242,14 @@ elements!(
         shape,
         target
     ),
-    (Audio, audio, "audio", autoplay, controls, r#loop, muted, preload, src),
-    (B, b, "b"),
-    (Base, base, "base", href, target),
-    (Bdi, bdi, "bdi", dir),
-    (Bdo, bdo, "bdo", dir),
-    (Blockquote, blockquote, "blockquote", cite),
+    (Audio, autoplay, controls, r#loop, muted, preload, src),
+    (B),
+    (Base, href, target),
+    (Bdi, dir),
+    (Bdo, dir),
+    (Blockquote, cite),
     (
         Body,
-        body,
-        "body",
         onafterprint,
         onbeforeprint,
         onbeforeunload,
@@ -275,11 +267,9 @@ elements!(
         onunhandledrejection,
         onunload
     ),
-    (Br, br, "br", clear),
+    (Br, clear),
     (
         Button,
-        button,
-        "button",
         disabled,
         form,
         formaction,
@@ -291,26 +281,24 @@ elements!(
         r#type,
         value
     ),
-    (Canvas, canvas, "canvas", height, width),
-    (Caption, caption, "caption"),
-    (Cite, cite, "cite"),
-    (Code, code, "code", r#type),
-    (Col, col, "col", span),
-    (Colgroup, colgroup, "colgroup", span),
-    (Dd, dd, "dd", r#type),
-    (Del, del, "del", cite, datetime),
-    (Details, details, "details", open),
-    (Dfn, dfn, "dfn"),
-    (Div, div, "div"),
-    (Dl, dl, "dl", r#type),
-    (Dt, dt, "dt", r#type),
-    (Em, em, "em", r#type),
-    (Embed, embed, "embed", height, src, r#type, width),
-    (Fieldset, fieldset, "fieldset", disabled, form, name),
+    (Canvas, height, width),
+    (Caption),
+    (Cite),
+    (Code, r#type),
+    (Col, span),
+    (Colgroup, span),
+    (Dd, r#type),
+    (Del, cite, datetime),
+    (Details, open),
+    (Dfn),
+    (Div),
+    (Dl, r#type),
+    (Dt, r#type),
+    (Em, r#type),
+    (Embed, height, src, r#type, width),
+    (Fieldset, disabled, form, name),
     (
         Form,
-        form,
-        "form",
         accept_charset,
         action,
         autocomplete,
@@ -320,20 +308,18 @@ elements!(
         novalidate,
         target
     ),
-    (H1, h1, "h1"),
-    (H2, h2, "h2"),
-    (H3, h3, "h3"),
-    (H4, h4, "h4"),
-    (H5, h5, "h5"),
-    (H6, h6, "h6"),
-    (Head, head, "head", profile),
-    (Hr, hr, "hr", align, color, noshade, size, width),
-    (Html, html, "html", manifest, xmlns),
-    (I, i, "i"),
+    (H1),
+    (H2),
+    (H3),
+    (H4),
+    (H5),
+    (H6),
+    (Head, profile),
+    (Hr, align, color, noshade, size, width),
+    (Html, manifest, xmlns),
+    (I),
     (
         Iframe,
-        iframe,
-        "iframe",
         allow,
         height,
         loading,
@@ -346,8 +332,6 @@ elements!(
     ),
     (
         Img,
-        img,
-        "img",
         alt,
         crossorigin,
         decoding,
@@ -365,8 +349,6 @@ elements!(
     ),
     (
         Input,
-        input,
-        "input",
         accept,
         alt,
         autocomplete,
@@ -398,15 +380,13 @@ elements!(
         value,
         width
     ),
-    (Ins, ins, "ins", cite, datetime),
-    (Kbd, kbd, "kbd"),
-    (Label, label, "label", r#for),
-    (Legend, legend, "legend"),
-    (Li, li, "li", value),
+    (Ins, cite, datetime),
+    (Kbd),
+    (Label, r#for),
+    (Legend),
+    (Li, value),
     (
         Link,
-        link,
-        "link",
         href,
         rel,
         media,
@@ -417,31 +397,26 @@ elements!(
         integrity,
         referrerpolicy
     ),
-    (Map, map, "map", name),
-    (Mark, mark, "mark"),
-    (Menu, menu, "menu", r#type, label),
-    (
-        Menuitem, menuitem, "menuitem", checked, command, default, disabled, icon, label,
-        radiogroup, r#type
-    ),
-    (Meta, meta, "meta", charset, http_equiv, name),
-    (Meter, meter, "meter", high, low, max, min, optimum, value),
-    (Noscript, noscript, "noscript"),
-    (Object, object, "object", data, form, height, name, r#type, usemap, width),
-    (Ol, ol, "ol", reversed, start, r#type),
-    (Option, option, "option", disabled, label, selected, value),
-    (Output, output, "output", r#for, form, name),
-    (P, p, "p"),
-    (Param, param, "param", name, value),
-    (Progress, progress, "progress", max, value),
-    (Q, q, "q", cite),
-    (Rp, rp, "rp"),
-    (Rt, rt, "rt"),
-    (Samp, samp, "samp"),
+    (Map, name),
+    (Mark),
+    (Menu, r#type, label),
+    (Menuitem, checked, command, default, disabled, icon, label, radiogroup, r#type),
+    (Meta, charset, http_equiv, name),
+    (Meter, high, low, max, min, optimum, value),
+    (Noscript),
+    (Object, data, form, height, name, r#type, usemap, width),
+    (Ol, reversed, start, r#type),
+    (Option, disabled, label, selected, value),
+    (Output, r#for, form, name),
+    (P),
+    (Param, name, value),
+    (Progress, max, value),
+    (Q, cite),
+    (Rp),
+    (Rt),
+    (Samp),
     (
         Script,
-        script,
-        "script",
         r#async,
         crossorigin,
         defer,
@@ -452,24 +427,22 @@ elements!(
         r#type,
         src
     ),
-    (Select, select, "select", disabled, form, multiple, name, required, size),
-    (Slot, slot, "slot", name),
-    (Small, small, "small"),
-    (Source, source, "source", media, sizes, src, srcset, r#type),
-    (Span, span, "span"),
-    (Strong, strong, "strong"),
-    (Style, style, "style", media, nonce, r#type),
-    (Sub, sub, "sub"),
-    (Summary, summary, "summary"),
-    (Sup, sup, "sup"),
-    (Table, table, "table"),
-    (Tbody, tbody, "tbody"),
-    (Td, td, "td", colspan, headers, rowspan),
-    (Template, template, "template"),
+    (Select, disabled, form, multiple, name, required, size),
+    (Slot, name),
+    (Small),
+    (Source, media, sizes, src, srcset, r#type),
+    (Span),
+    (Strong),
+    (Style, media, nonce, r#type),
+    (Sub),
+    (Summary),
+    (Sup),
+    (Table),
+    (Tbody),
+    (Td, colspan, headers, rowspan),
+    (Template),
     (
         Textarea,
-        textarea,
-        "textarea",
         autocomplete,
         cols,
         dirname,
@@ -484,19 +457,17 @@ elements!(
         rows,
         wrap
     ),
-    (Tfoot, tfoot, "tfoot"),
-    (Th, th, "th", colspan, headers, rowspan, scope),
-    (Thead, thead, "thead"),
-    (Time, time, "time", datetime),
-    (Title, title, "title"),
-    (Tr, tr, "tr"),
-    (Track, track, "track", default, kind, label, src, srclang),
-    (Ul, ul, "ul"),
-    (Var, var, "var"),
+    (Tfoot),
+    (Th, colspan, headers, rowspan, scope),
+    (Thead),
+    (Time, datetime),
+    (Title),
+    (Tr),
+    (Track, default, kind, label, src, srclang),
+    (Ul),
+    (Var),
     (
         Video,
-        video,
-        "video",
         autoplay,
         controls,
         crossorigin,
@@ -509,5 +480,5 @@ elements!(
         src,
         width
     ),
-    (Wbr, wbr, "wbr"),
+    (Wbr),
 );

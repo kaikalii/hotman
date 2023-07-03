@@ -73,7 +73,7 @@ macro_rules! attribute_trait {
         paste! {
             impl<E> ElementData<E> for [<$name:camel>]
             where
-                E: [<Has_ $name>]
+                E: [<Has $name:camel>]
             {
                 fn add_to(self, element: &mut E) {
                     element.[<set_ $name>](self.take());
@@ -85,7 +85,7 @@ macro_rules! attribute_trait {
         paste! {
             impl<E, T> ElementData<E> for [<$name:camel>]<T>
             where
-                E: [<Has_ $name>],
+                E: [<Has $name:camel>],
                 T: Into<String>,
             {
                 fn add_to(self, element: &mut E) {
@@ -108,7 +108,7 @@ macro_rules! attributes {
                     #[doc = stringify!($name)]
                     #[doc = "` attribute"]
                     #[allow(non_camel_case_types)]
-                    pub trait [<Has_ $name>] {
+                    pub trait [<Has $name:camel>] {
                         #[doc = "Get the value of the `"]
                         #[doc = stringify!($name)]
                         #[doc = "` attribute"]
