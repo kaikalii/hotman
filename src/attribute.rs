@@ -6,13 +6,12 @@ use paste::paste;
 
 macro_rules! attribute_struct {
     ($name:ident[bool]) => {
-        #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-        #[allow(non_camel_case_types)]
-        #[doc = "The `"]
-        #[doc = stringify!($name)]
-        #[doc = "` attribute"]
-        pub struct $name;
         paste! {
+            #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+            #[doc = "The `"]
+            #[doc = stringify!($name)]
+            #[doc = "` attribute"]
+            pub struct [<$name:camel>];
             #[allow(non_camel_case_types)]
             pub(crate) type [<$name _t>] = bool;
             #[allow(non_camel_case_types)]
@@ -29,21 +28,21 @@ macro_rules! attribute_struct {
                     Ok(())
                 }
             }
-        }
-        impl $name {
-            fn take(self) -> bool {
-                true
+            impl [<$name:camel>] {
+                fn take(self) -> bool {
+                    true
+                }
             }
         }
     };
     ($name:ident) => {
-        #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-        #[allow(non_camel_case_types)]
-        #[doc = "The `"]
-        #[doc = stringify!($name)]
-        #[doc = "` attribute"]
-        pub struct $name<T = String>(pub T);
         paste! {
+            #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+            #[allow(non_camel_case_types)]
+            #[doc = "The `"]
+            #[doc = stringify!($name)]
+            #[doc = "` attribute"]
+            pub struct [<$name:camel>]<T = String>(pub T);
             #[allow(non_camel_case_types)]
             pub(crate) type [<$name _t>] = String;
             #[allow(non_camel_case_types)]
@@ -60,10 +59,10 @@ macro_rules! attribute_struct {
                     write!(f, " {}=\"{}\"", stringify!($name).trim_end_matches('_'), s)
                 }
             }
-        }
-        impl<T> $name<T> {
-            fn take(self) -> T {
-                self.0
+            impl<T> [<$name:camel>]<T> {
+                fn take(self) -> T {
+                    self.0
+                }
             }
         }
     };
@@ -72,7 +71,7 @@ macro_rules! attribute_struct {
 macro_rules! attribute_trait {
     ($name:ident [bool]) => {
         paste! {
-            impl<E> ElementData<E> for $name
+            impl<E> ElementData<E> for [<$name:camel>]
             where
                 E: [<Has_ $name>]
             {
@@ -84,7 +83,7 @@ macro_rules! attribute_trait {
     };
     ($name:ident) => {
         paste! {
-            impl<E, T> ElementData<E> for $name<T>
+            impl<E, T> ElementData<E> for [<$name:camel>]<T>
             where
                 E: [<Has_ $name>],
                 T: Into<String>,
@@ -223,10 +222,10 @@ attributes!(
     poster,
     preload,
     profile,
-    async_[bool],
-    for_,
-    loop_[bool],
-    type_,
+    r#async[bool],
+    r#for,
+    r#loop[bool],
+    r#type,
     radiogroup,
     readonly[bool],
     referrerpolicy,

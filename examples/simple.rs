@@ -3,27 +3,23 @@ use hotman::*;
 fn main() {
     let dom = html((
         Comment("A simple login page"),
-        head((
-            meta(charset("utf-8")),
-            // `title` is the name of an attribute, so we use `title_elem` for the element
-            title_elem("Login"),
-        )),
+        head((meta(Charset("utf-8")), title("Login"))),
         body((
             h1("Login"),
             form((
-                (action("/login"), method("POST")),
+                (Action("/login"), Method("POST")),
                 input((
-                    type_("text"),
-                    name("username"),
-                    placeholder("Username"),
-                    autofocus,
+                    Type("text"),
+                    Name("username"),
+                    Placeholder("Username"),
+                    Autofocus,
                 )),
-                input((type_("password"), name("password"), placeholder("Password"))),
-                input((type_("submit"), value("Login"))),
+                input((Type("password"), Name("password"), Placeholder("Password"))),
+                input((Type("submit"), Value("Login"))),
             )),
             p((
                 "Don't have an account? ",
-                a((href("/register"), "Register")),
+                a((Href("/register"), "Register")),
             )),
         )),
     ))
