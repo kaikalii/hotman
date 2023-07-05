@@ -16,7 +16,7 @@ All the same words are there, only the punctuation is different.
 
 ## Elements
 
-Html elements are constructed using functions with the same name as the tag (or `<tag>_elem` for tags with the same name as an attribute).
+Html elements are constructed using functions with the same name as the tag.
 
 Examples are [`head`], [`body`], [`div`], and [`p`].
 
@@ -234,6 +234,8 @@ where
 /// A full HTML document.
 ///
 /// Automatically adds the `<!DOCTYPE html>` tag.
+///
+/// Created with [`element_structs::Html::page`].
 #[derive(Debug, Clone)]
 pub struct Page(pub element_structs::Html);
 
