@@ -1,6 +1,12 @@
 [package]
+categories = ["template-engine", "web-programming"]
+documentation = "https://docs.rs/hotman"
 edition = "2021"
+keywords = ["html", "template", "ssr"]
+license = "MIT"
 name = "hotman"
+readme = "readme.md"
+repository = "https://github.com/kaikalii/hotman"
 version = "0.1.0"
 
 [dependencies]
