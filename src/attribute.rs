@@ -78,6 +78,60 @@ impl<'a> IndentFormat for GlobalAttributes<'a> {
     }
 }
 
+/// The HTML events
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub struct Events<'a>(Vec<(&'static str, Cow<'a, str>)>);
+
+impl<'a> Events<'a> {
+    /// No events
+    pub const NONE: Self = Self(Vec::new());
+    /// Check if the events is empty
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+    /// Check if the events contains an event with the given name
+    pub fn contains(&self, name: &str) -> bool {
+        self.0.iter().any(|(n, _)| n == &name)
+    }
+    /// Get the value of the event with the given name
+    pub fn get(&self, name: &str) -> Option<&str> {
+        self.0
+            .iter()
+            .find(|(n, _)| n == &name)
+            .map(|(_, v)| v.as_ref())
+    }
+    /// Insert an event with the given name and value
+    pub fn insert(&mut self, name: &'static str, value: impl Into<Cow<'a, str>>) {
+        if let Some(i) = self.0.iter().position(|(n, _)| n == &name) {
+            self.0[i].1 = value.into();
+        } else {
+            self.0.push((name, value.into()));
+        }
+    }
+    /// Remove the event with the given name
+    pub fn remove(&mut self, name: &str) {
+        self.0.retain(|(n, _)| n != &name);
+    }
+    /// Iterate over the events
+    pub fn iter(&self) -> impl Iterator<Item = (&'static str, &str)> {
+        self.0.iter().map(|(n, v)| (*n, v.as_ref()))
+    }
+}
+
+/// Add an event handler to an element
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct On<V>(pub &'static str, pub V);
+
+impl<'a, E, V> ElementData<E> for On<V>
+where
+    E: Element<'a>,
+    V: Into<Cow<'a, str>>,
+{
+    fn add_to(self, element: &mut E) {
+        element.events_mut().insert(self.0, self.1);
+    }
+}
+
 macro_rules! attribute_struct {
     ($name:tt[bool]) => {
         paste! {
@@ -271,22 +325,6 @@ attributes!(
     nonce,
     noshade,
     novalidate[bool],
-    onafterprint,
-    onbeforeprint,
-    onbeforeunload,
-    onhashchange,
-    onlanguagechange,
-    onmessage,
-    onmessageerror,
-    onoffline,
-    ononline,
-    onpagehide,
-    onpageshow,
-    onpopstate,
-    onrejectionhandled,
-    onstorage,
-    onunhandledrejection,
-    onunload,
     open[bool],
     optimum,
     pattern,

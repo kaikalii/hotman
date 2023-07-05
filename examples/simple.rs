@@ -3,7 +3,11 @@ use hotman::*;
 fn main() {
     let dom = html((
         Comment("A simple login page"),
-        head((meta(Charset("utf-8")), title("Login"))),
+        head((
+            meta(Charset("utf-8")),
+            title("Login"),
+            script(Src("/script.js")),
+        )),
         body((
             h1("Login"),
             form((
@@ -12,9 +16,15 @@ fn main() {
                     Type("text"),
                     Name("username"),
                     Placeholder("Username"),
+                    On("change", "validate_username()"),
                     Autofocus,
                 )),
-                input((Type("password"), Name("password"), Placeholder("Password"))),
+                input((
+                    Type("password"),
+                    Name("password"),
+                    Placeholder("Password"),
+                    On("change", "validate_password()"),
+                )),
                 input((Type("submit"), Value("Login"))),
             )),
             BR,
@@ -25,5 +35,6 @@ fn main() {
         )),
     ))
     .page();
+
     println!("{dom}");
 }

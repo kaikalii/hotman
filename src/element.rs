@@ -3,7 +3,7 @@ use std::{borrow::Cow, fmt};
 use paste::paste;
 
 use crate::{
-    attribute::{self, GlobalAttributes},
+    attribute::{self, Events, GlobalAttributes},
     attribute_traits,
     format::*,
     ElementData,
@@ -12,14 +12,15 @@ use crate::{
 /// Short alias for `br(())`
 pub const BR: element_structs::Br<'static> = element_structs::Br {
     global: GlobalAttributes::EMPTY,
+    events: Events::NONE,
     clear: Cow::Borrowed(""),
     children: Vec::new(),
 };
 
 /// Trait for types of elements
 pub trait Element<'a> {
-    /// Get the children of this element
-    fn children(&self) -> &[Node<'a>];
+    /// Get the mutable events of this element
+    fn events_mut(&mut self) -> &mut Events<'a>;
     /// Get the mutable children of this element
     fn children_mut(&mut self) -> &mut Vec<Node<'a>>;
 }
@@ -90,6 +91,8 @@ macro_rules! elements {
                     pub struct $name<'a> {
                         /// The global attributes of this element
                         pub global: GlobalAttributes<'a>,
+                        /// The element's events
+                        pub events: Events<'a>,
                         $(
                             #[doc = "The `" $attr "` attribute"]
                             pub $attr: attribute::[<$attr _t>]<'a>,
@@ -105,6 +108,9 @@ macro_rules! elements {
                         f.write(format_args!("<{tag}"))?;
                         self.global.indent_fmt(f)?;
                         $(write_attr!(self, f, $attr);)*
+                        for (name, value) in self.events.iter() {
+                            f.write(format_args!(" on{name}=\"{value}\""))?;
+                        }
                         if self.children.is_empty() {
                             f.write(format_args!(" />"))?;
                             return Ok(());
@@ -143,8 +149,8 @@ macro_rules! elements {
                 }
 
                 impl<'a> Element<'a> for $name<'a> {
-                    fn children(&self) -> &[Node<'a>] {
-                        &self.children
+                    fn events_mut(&mut self) -> &mut Events<'a> {
+                        &mut self.events
                     }
                     fn children_mut(&mut self) -> &mut Vec<Node<'a>> {
                         &mut self.children
@@ -243,25 +249,7 @@ elements!(
     (Bdi, dir),
     (Bdo, dir),
     (Blockquote, cite),
-    (
-        Body,
-        onafterprint,
-        onbeforeprint,
-        onbeforeunload,
-        onhashchange,
-        onlanguagechange,
-        onmessage,
-        onmessageerror,
-        onoffline,
-        ononline,
-        onpagehide,
-        onpageshow,
-        onpopstate,
-        onrejectionhandled,
-        onstorage,
-        onunhandledrejection,
-        onunload
-    ),
+    (Body),
     (Br, clear),
     (
         Button,
