@@ -115,7 +115,7 @@ To make writing HTML as short as possible, hotman exports every element, attribu
 
 This means that there are many potential name conflicts with surrounding code.
 
-It is recommended to scope `user hotman::*` to a small block of code:
+It is recommended to scope `use hotman::*` to a small block of code:
 
 ```rust
 let page_head = {
