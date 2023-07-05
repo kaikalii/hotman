@@ -111,19 +111,19 @@ pub trait ElementData<E> {
     fn add_to(self, element: &mut E);
 }
 
-impl<E, D> ElementData<E> for D
+impl<'a, E, D> ElementData<E> for D
 where
-    E: Element,
-    D: Into<Node>,
+    E: Element<'a>,
+    D: Into<Node<'a>>,
 {
     fn add_to(self, elem: &mut E) {
         elem.children_mut().push(self.into());
     }
 }
 
-impl<E, D> ElementData<E> for Vec<D>
+impl<'a, E, D> ElementData<E> for Vec<D>
 where
-    E: Element,
+    E: Element<'a>,
     D: ElementData<E>,
 {
     fn add_to(self, elem: &mut E) {
@@ -133,9 +133,9 @@ where
     }
 }
 
-impl<E, D, const N: usize> ElementData<E> for [D; N]
+impl<'a, E, D, const N: usize> ElementData<E> for [D; N]
 where
-    E: Element,
+    E: Element<'a>,
     D: ElementData<E>,
 {
     fn add_to(self, elem: &mut E) {
@@ -145,9 +145,9 @@ where
     }
 }
 
-impl<E, D> ElementData<E> for Option<D>
+impl<'a, E, D> ElementData<E> for Option<D>
 where
-    E: Element,
+    E: Element<'a>,
     D: ElementData<E>,
 {
     fn add_to(self, elem: &mut E) {
@@ -237,18 +237,18 @@ where
 ///
 /// Created with [`element_structs::Html::page`].
 #[derive(Debug, Clone)]
-pub struct Page(pub element_structs::Html);
+pub struct Page<'a>(pub element_structs::Html<'a>);
 
-impl fmt::Display for Page {
+impl<'a> fmt::Display for Page<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "<!DOCTYPE html>")?;
         write!(f, "{}", self.0)
     }
 }
 
-impl element_structs::Html {
+impl<'a> element_structs::Html<'a> {
     /// Prefix the HTML element with `<!DOCTYPE html>`
-    pub fn page(self) -> Page {
+    pub fn page(self) -> Page<'a> {
         Page(self)
     }
 }

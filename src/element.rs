@@ -1,26 +1,26 @@
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use paste::paste;
 
 use crate::{attribute, attribute_traits, format::*, ElementData};
 
 /// Trait for types of elements
-pub trait Element {
+pub trait Element<'a> {
     /// Get the children of this element
-    fn children(&self) -> &[Node];
+    fn children(&self) -> &[Node<'a>];
     /// Get the mutable children of this element
-    fn children_mut(&mut self) -> &mut Vec<Node>;
+    fn children_mut(&mut self) -> &mut Vec<Node<'a>>;
 }
 
 macro_rules! impl_global_attrs {
     ($name:ident, $($attr:ident),* $(,)?) => {
         $(
             paste! {
-                impl attribute_traits::[<Has $attr:camel>] for $name {
+                impl<'a> attribute_traits::[<Has $attr:camel>]<'a> for $name<'a> {
                     fn [<get_ $attr>](&self) -> attribute::[<$attr _ref_t>] {
                         attribute::[<$attr _take_ref>](&self.$attr)
                     }
-                    fn [<set_ $attr>](&mut self, val: impl Into<attribute::[<$attr _t>]>) {
+                    fn [<set_ $attr>](&mut self, val: impl Into<attribute::[<$attr _t>]<'a>>) {
                         self.$attr = val.into();
                     }
                 }
@@ -39,15 +39,15 @@ macro_rules! elements {
     ($(($name:ident $(,$attr:ident)* $(,)?)),* $(,)*) => {
         /// An HTML node
         #[derive(Debug, Clone)]
-        pub enum Node {
+        pub enum Node<'a> {
             /// A text element
-            Text(String),
+            Text(Cow<'a, str>),
             /// A comment,
-            Comment(String),
-            $(#[allow(missing_docs)] $name(element_structs::$name),)*
+            Comment(Cow<'a, str>),
+            $(#[allow(missing_docs)] $name(element_structs::$name<'a>),)*
         }
 
-        impl fmt::Display for Node {
+        impl<'a> fmt::Display for Node<'a> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 match self {
                     $(Node::$name(element) => write!(f, "{element}"),)*
@@ -57,7 +57,7 @@ macro_rules! elements {
             }
         }
 
-        impl IndentFormat for Node {
+        impl<'a> IndentFormat for Node<'a> {
             fn indent_fmt(&self, f: &mut IndentFormatter) -> fmt::Result {
                 match self {
                     $(Node::$name(element) => element.indent_fmt(f),)*
@@ -75,29 +75,29 @@ macro_rules! elements {
                 paste! {
                     #[derive(Debug, Clone, Default)]
                     #[doc = "A `<" [<$name:lower>] ">` element"]
-                    pub struct $name {
+                    pub struct $name<'a> {
                         /// The `id` attribute
-                        pub id: String,
+                        pub id: Cow<'a, str>,
                         /// The `class` attribute
-                        pub class: String,
+                        pub class: Cow<'a, str>,
                         /// The `style` attribute
-                        pub style: String,
+                        pub style: Cow<'a, str>,
                         /// The `title` attribute
-                        pub title: String,
+                        pub title: Cow<'a, str>,
                         /// The `autofocus` attribute
                         pub autofocus: bool,
                         /// The `itemscope` attribute
                         pub itemscope: bool,
                         $(
                             #[doc = "The `" $attr "` attribute"]
-                            pub $attr: attribute::[<$attr _t>],
+                            pub $attr: attribute::[<$attr _t>]<'a>,
                         )*
                         /// The children of this element
-                        pub children: Vec<Node>,
+                        pub children: Vec<Node<'a>>,
                     }
                 }
 
-                impl IndentFormat for $name {
+                impl<'a> IndentFormat for $name<'a> {
                     fn indent_fmt(&self, f: &mut IndentFormatter) -> fmt::Result {
                         let tag = paste!(stringify!([<$name:lower>]));
                         f.write(format_args!("<{tag}"))?;
@@ -133,23 +133,23 @@ macro_rules! elements {
                     }
                 }
 
-                impl fmt::Display for $name {
+                impl<'a> fmt::Display for $name<'a> {
                     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                         self.indent_fmt(&mut IndentFormatter::from(f))
                     }
                 }
 
-                impl From<$name> for Node {
-                    fn from(element: $name) -> Self {
+                impl<'a> From<$name<'a>> for Node<'a> {
+                    fn from(element: $name<'a>) -> Self {
                         Node::$name(element)
                     }
                 }
 
-                impl Element for $name {
-                    fn children(&self) -> &[Node] {
+                impl<'a> Element<'a> for $name<'a> {
+                    fn children(&self) -> &[Node<'a>] {
                         &self.children
                     }
-                    fn children_mut(&mut self) -> &mut Vec<Node> {
+                    fn children_mut(&mut self) -> &mut Vec<Node<'a>> {
                         &mut self.children
                     }
                 }
@@ -158,11 +158,11 @@ macro_rules! elements {
 
                 $(
                     paste! {
-                        impl attribute_traits::[<Has $attr:camel>] for $name {
+                        impl<'a> attribute_traits::[<Has $attr:camel>]<'a> for $name<'a> {
                             fn [<get_ $attr>](&self) -> attribute::[<$attr _ref_t>] {
                                 attribute::[<$attr _take_ref>](&self.$attr)
                             }
-                            fn [<set_ $attr>](&mut self, val: impl Into<attribute::[<$attr _t>]>) {
+                            fn [<set_ $attr>](&mut self, val: impl Into<attribute::[<$attr _t>]<'a>>) {
                                 self.$attr = val.into();
                             }
                         }
@@ -174,7 +174,7 @@ macro_rules! elements {
         $(paste! {
             #[must_use]
             #[doc = "Make a `<" [<$name:lower>] ">` element"]
-            pub fn [<$name:lower>](elem_data: impl ElementData<element_structs::$name>) -> element_structs::$name {
+            pub fn [<$name:lower>]<'a>(elem_data: impl ElementData<element_structs::$name<'a>>) -> element_structs::$name<'a> {
                 let mut elem = Default::default();
                 elem_data.add_to(&mut elem);
                 elem
@@ -183,21 +183,21 @@ macro_rules! elements {
     };
 }
 
-impl From<String> for Node {
+impl<'a> From<String> for Node<'a> {
     fn from(text: String) -> Self {
-        Node::Text(text)
+        Node::Text(text.into())
     }
 }
 
-impl From<&str> for Node {
-    fn from(text: &str) -> Self {
-        Node::Text(text.to_string())
+impl<'a> From<&'a str> for Node<'a> {
+    fn from(text: &'a str) -> Self {
+        Node::Text(text.into())
     }
 }
 
-impl From<&String> for Node {
-    fn from(text: &String) -> Self {
-        Node::Text(text.to_string())
+impl<'a> From<&'a String> for Node<'a> {
+    fn from(text: &'a String) -> Self {
+        Node::Text(text.as_str().into())
     }
 }
 
@@ -205,9 +205,9 @@ impl From<&String> for Node {
 #[derive(Debug, Clone)]
 pub struct Comment<T>(pub T);
 
-impl<T> From<Comment<T>> for Node
+impl<'a, T> From<Comment<T>> for Node<'a>
 where
-    T: Into<String>,
+    T: Into<Cow<'a, str>>,
 {
     fn from(comment: Comment<T>) -> Self {
         Node::Comment(comment.0.into())

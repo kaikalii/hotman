@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use crate::*;
 
@@ -13,7 +13,7 @@ macro_rules! attribute_struct {
             #[doc = "` attribute"]
             pub struct [<$name:camel>];
             #[allow(non_camel_case_types)]
-            pub(crate) type [<$name _t>] = bool;
+            pub(crate) type [<$name _t>]<'a> = bool;
             #[allow(non_camel_case_types)]
             pub(crate) type [<$name _ref_t>] = bool;
             #[allow(non_snake_case)]
@@ -44,11 +44,11 @@ macro_rules! attribute_struct {
             #[doc = "` attribute"]
             pub struct [<$name:camel>]<T = String>(pub T);
             #[allow(non_camel_case_types)]
-            pub(crate) type [<$name _t>] = String;
+            pub(crate) type [<$name _t>]<'a> = Cow<'a, str>;
             #[allow(non_camel_case_types)]
             pub(crate) type [<$name _ref_t>]<'a> = &'a str;
             #[allow(non_snake_case)]
-            pub(crate) fn [<$name _take_ref>](val: &[<$name _t>]) -> [<$name _ref_t>] {
+            pub(crate) fn [<$name _take_ref>]<'a>(val: &'a [<$name _t>]) -> [<$name _ref_t>]<'a> {
                 val
             }
             #[allow(non_snake_case)]
@@ -71,9 +71,9 @@ macro_rules! attribute_struct {
 macro_rules! attribute_trait {
     ($name:tt [bool]) => {
         paste! {
-            impl<E> ElementData<E> for [<$name:camel>]
+            impl<'a, E> ElementData<E> for [<$name:camel>]
             where
-                E: [<Has $name:camel>]
+                E: [<Has $name:camel>]<'a>
             {
                 fn add_to(self, element: &mut E) {
                     element.[<set_ $name>](self.take());
@@ -83,10 +83,10 @@ macro_rules! attribute_trait {
     };
     ($name:tt) => {
         paste! {
-            impl<E, T> ElementData<E> for [<$name:camel>]<T>
+            impl<'a, E, T> ElementData<E> for [<$name:camel>]<T>
             where
-                E: [<Has $name:camel>],
-                T: Into<String>,
+                E: [<Has $name:camel>]<'a>,
+                T: Into<Cow<'a, str>>,
             {
                 fn add_to(self, element: &mut E) {
                     element.[<set_ $name>](self.take());
@@ -108,7 +108,7 @@ macro_rules! attributes {
                     #[doc = stringify!($name)]
                     #[doc = "` attribute"]
                     #[allow(non_camel_case_types)]
-                    pub trait [<Has $name:camel>] {
+                    pub trait [<Has $name:camel>]<'a> {
                         #[doc = "Get the value of the `"]
                         #[doc = stringify!($name)]
                         #[doc = "` attribute"]
@@ -116,7 +116,7 @@ macro_rules! attributes {
                         #[doc = "Set the value of the `"]
                         #[doc = stringify!($name)]
                         #[doc = "` attribute"]
-                        fn [<set_ $name>](&mut self, value: impl Into<[<$name _t>]>);
+                        fn [<set_ $name>](&mut self, value: impl Into<[<$name _t>]<'a>>);
                     }
                 }
                 attribute_trait!($name $([$ty])*);
