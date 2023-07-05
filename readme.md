@@ -1,3 +1,7 @@
+[<img alt="github" src="https://img.shields.io/badge/GitHub-kaikalii%2Fhotman-8da0cb?logo=github">](https://github.com/kaikalii/hotman)
+[<img alt="crates.io" src="https://img.shields.io/badge/crates.io-hotman-orange?logo=rust">](https://crates.io/crates/hotman)
+[<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-hotman-blue?logo=docs.rs">](https://docs.rs/hotman)
+
 ~~html~~
 <br>
 ~~hot male~~
