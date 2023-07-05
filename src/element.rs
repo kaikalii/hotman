@@ -87,7 +87,7 @@ macro_rules! elements {
             $(
                 paste! {
                     #[derive(Debug, Clone, Default)]
-                    #[doc = "A `<" [<$name:lower>] ">` element"]
+                    #[doc = "A [`<" [<$name:lower>] ">`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/" [<$name:lower>] ") element"]
                     pub struct $name<'a> {
                         /// The global attributes of this element
                         pub global: GlobalAttributes<'a>,
@@ -176,7 +176,8 @@ macro_rules! elements {
 
         $(paste! {
             #[must_use]
-            #[doc = "Make a `<" [<$name:lower>] ">` element"]
+            #[doc = "Make a [`<" [<$name:lower>] ">`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/" [<$name:lower>] ") element"]
+            #[doc = ""]
             pub fn [<$name:lower>]<'a>(elem_data: impl ElementData<element_structs::$name<'a>>) -> element_structs::$name<'a> {
                 let mut elem = Default::default();
                 elem_data.add_to(&mut elem);
