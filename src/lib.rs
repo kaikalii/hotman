@@ -34,6 +34,14 @@ Attributes are represented by structs with the same name as the attribute. They 
 
 Examples are [`Id`], [`Href`], [`Class`], and [`Style`].
 
+## Events
+
+Individual event handler attributes do not each have their own struct.
+
+Instead, they can be added to elements via the [`On`] struct.
+
+`On` implements [`ElementData`] and consists of an [`Event`] and a string representing the handler.
+
 # Static Example
 
 ```rust
@@ -54,14 +62,14 @@ let dom = html((
                 Type("text"),
                 Name("username"),
                 Placeholder("Username"),
-                On("change", "validate_username()"),
+                On(Change, "validate_username()"),
                 Autofocus,
             )),
             input((
                 Type("password"),
                 Name("password"),
                 Placeholder("Password"),
-                On("change", "validate_password()"),
+                On(Change, "validate_password()"),
             )),
             input((Type("submit"), Value("Login"))),
         )),
@@ -100,6 +108,21 @@ assert_eq!(number_list.to_string(), "\
     <li>5</li>
 </ul>");
 ```
+
+## Scoping
+
+To make writing HTML as short as possible, hotman exports every element, attribute, and event in the root of the crate.
+
+This means that there are many potential name conflicts with surrounding code.
+
+It is recommended to scope `user hotman::*` to a small block of code:
+
+```rust
+let page_head = {
+    use hotman::*;
+    head((title("My Page"), meta((Name("Description"), Content("A page")))))
+};
+```
 */
 
 mod attribute;
@@ -113,6 +136,7 @@ use std::{
 
 pub use attribute::*;
 pub use element::*;
+pub use Event::*;
 
 /// A piece of data that can be added to an element
 ///

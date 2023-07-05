@@ -108,8 +108,8 @@ macro_rules! elements {
                         f.write(format_args!("<{tag}"))?;
                         self.global.indent_fmt(f)?;
                         $(write_attr!(self, f, $attr);)*
-                        for (name, value) in self.events.iter() {
-                            f.write(format_args!(" on{name}=\"{value}\""))?;
+                        for (event, value) in self.events.iter() {
+                            f.write(format_args!(" {event}=\"{value}\""))?;
                         }
                         if self.children.is_empty() {
                             f.write(format_args!(" />"))?;
@@ -384,7 +384,7 @@ elements!(
     (Mark),
     (Menu, r#type, label),
     (Menuitem, checked, command, default, disabled, icon, label, radiogroup, r#type),
-    (Meta, charset, http_equiv, name),
+    (Meta, charset, content, http_equiv, name),
     (Meter, high, low, max, min, optimum, value),
     (Noscript),
     (Object, data, form, height, name, r#type, usemap, width),

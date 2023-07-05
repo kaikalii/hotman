@@ -78,60 +78,6 @@ impl<'a> IndentFormat for GlobalAttributes<'a> {
     }
 }
 
-/// The HTML events
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-pub struct Events<'a>(Vec<(&'static str, Cow<'a, str>)>);
-
-impl<'a> Events<'a> {
-    /// No events
-    pub const NONE: Self = Self(Vec::new());
-    /// Check if the events is empty
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-    /// Check if the events contains an event with the given name
-    pub fn contains(&self, name: &str) -> bool {
-        self.0.iter().any(|(n, _)| n == &name)
-    }
-    /// Get the value of the event with the given name
-    pub fn get(&self, name: &str) -> Option<&str> {
-        self.0
-            .iter()
-            .find(|(n, _)| n == &name)
-            .map(|(_, v)| v.as_ref())
-    }
-    /// Insert an event with the given name and value
-    pub fn insert(&mut self, name: &'static str, value: impl Into<Cow<'a, str>>) {
-        if let Some(i) = self.0.iter().position(|(n, _)| n == &name) {
-            self.0[i].1 = value.into();
-        } else {
-            self.0.push((name, value.into()));
-        }
-    }
-    /// Remove the event with the given name
-    pub fn remove(&mut self, name: &str) {
-        self.0.retain(|(n, _)| n != &name);
-    }
-    /// Iterate over the events
-    pub fn iter(&self) -> impl Iterator<Item = (&'static str, &str)> {
-        self.0.iter().map(|(n, v)| (*n, v.as_ref()))
-    }
-}
-
-/// Add an event handler to an element
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct On<V>(pub &'static str, pub V);
-
-impl<'a, E, V> ElementData<E> for On<V>
-where
-    E: Element<'a>,
-    V: Into<Cow<'a, str>>,
-{
-    fn add_to(self, element: &mut E) {
-        element.events_mut().insert(self.0, self.1);
-    }
-}
-
 macro_rules! attribute_struct {
     ($name:tt[bool]) => {
         paste! {
@@ -272,6 +218,7 @@ attributes!(
     cols,
     colspan,
     command,
+    content,
     controls[bool],
     coords,
     crossorigin,
@@ -368,3 +315,157 @@ attributes!(
     wrap,
     xmlns,
 );
+
+macro_rules! event {
+    ($($name:ident),* $(,)?) => {
+        /// Types of event handlers
+        ///
+        /// Use with [`On`] to add an event handler to an element
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        #[allow(missing_docs)]
+        pub enum Event {
+            $($name,)*
+        }
+
+        impl fmt::Display for Event {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                match self {
+                    $(Self::$name => write!(f, paste!(concat!("on", stringify!([<$name:lower>])))),)*
+                }
+            }
+        }
+    };
+}
+
+event!(
+    Abort,
+    AfterPrint,
+    BeforePrint,
+    BeforeUnload,
+    Blur,
+    CanPlay,
+    CanPlayThrough,
+    Change,
+    Click,
+    ContextMenu,
+    Copy,
+    CueChange,
+    Cut,
+    DblClick,
+    Drag,
+    DragEnd,
+    DragEnter,
+    DragLeave,
+    DragOver,
+    DragStart,
+    Drop,
+    DurationChange,
+    Emptied,
+    Ended,
+    Error,
+    Focus,
+    HashChange,
+    Input,
+    Invalid,
+    KeyDown,
+    KeyPress,
+    KeyUp,
+    Load,
+    LoadedData,
+    LoadedMetadata,
+    LoadStart,
+    Message,
+    MouseDown,
+    MouseMove,
+    MouseOut,
+    MouseOver,
+    MouseUp,
+    MouseWheel,
+    Offline,
+    Online,
+    PageHide,
+    PageShow,
+    Paste,
+    Pause,
+    Play,
+    Playing,
+    PopState,
+    Progress,
+    RateChange,
+    Reset,
+    Resize,
+    Scroll,
+    Search,
+    Seeked,
+    Seeking,
+    Select,
+    Stalled,
+    Storage,
+    Submit,
+    Suspend,
+    TimeUpdate,
+    Toggle,
+    Unload,
+    VolumeChange,
+    Waiting,
+    Wheel,
+);
+
+/// The HTML events
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub struct Events<'a>(Vec<(Event, Cow<'a, str>)>);
+
+impl<'a> Events<'a> {
+    /// No events
+    pub const NONE: Self = Self(Vec::new());
+    /// Check if the events is empty
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+    /// Check if the events contains an event
+    pub fn contains(&self, event: Event) -> bool {
+        self.0.iter().any(|(e, _)| e == &event)
+    }
+    /// Get the value of the event
+    pub fn get(&self, event: Event) -> Option<&str> {
+        self.0
+            .iter()
+            .find(|(e, _)| e == &event)
+            .map(|(_, v)| v.as_ref())
+    }
+    /// Insert an event and value
+    pub fn insert(&mut self, event: Event, value: impl Into<Cow<'a, str>>) {
+        if let Some(i) = self.0.iter().position(|(e, _)| e == &event) {
+            self.0[i].1 = value.into();
+        } else {
+            self.0.push((event, value.into()));
+        }
+    }
+    /// Remove the event
+    pub fn remove(&mut self, event: Event) {
+        self.0.retain(|(e, _)| e != &event);
+    }
+    /// Iterate over the events
+    pub fn iter(&self) -> impl Iterator<Item = (Event, &str)> {
+        self.0.iter().map(|(n, v)| (*n, v.as_ref()))
+    }
+}
+
+/// Add an event handler to an element
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct On<V>(
+    /// The event
+    pub Event,
+    /// The value
+    pub V,
+);
+
+impl<'a, E, V> ElementData<E> for On<V>
+where
+    E: Element<'a>,
+    V: Into<Cow<'a, str>>,
+{
+    fn add_to(self, element: &mut E) {
+        element.events_mut().insert(self.0, self.1);
+    }
+}
