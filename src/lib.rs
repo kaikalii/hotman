@@ -24,6 +24,8 @@ Html elements are constructed using functions with the same name as the tag.
 
 Examples are [`head`], [`body`], [`div`], and [`p`].
 
+Elements can be converted to strings with the [`Display`] trait (and by extension, the [`ToString::to_string`] method).
+
 ## `ElementData`
 
 The [`ElementData`] trait is implemented for any type which adds either attributes or children to an element.
@@ -134,7 +136,7 @@ mod element;
 mod format;
 
 use std::{
-    fmt,
+    fmt::{self, Display},
     iter::{FilterMap, FlatMap, Map},
 };
 
@@ -278,7 +280,7 @@ where
 #[derive(Debug, Clone)]
 pub struct Page<'a>(pub element_structs::Html<'a>);
 
-impl<'a> fmt::Display for Page<'a> {
+impl<'a> Display for Page<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "<!DOCTYPE html>")?;
         write!(f, "{}", self.0)
