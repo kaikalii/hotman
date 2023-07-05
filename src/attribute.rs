@@ -200,7 +200,6 @@ macro_rules! attributes {
 }
 
 attributes!(
-    accept_charset,
     accept,
     action,
     align,

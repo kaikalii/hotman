@@ -282,7 +282,6 @@ elements!(
     (Fieldset, disabled, form, name),
     (
         Form,
-        accept_charset,
         action,
         autocomplete,
         enctype,
