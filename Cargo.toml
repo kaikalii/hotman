@@ -1,5 +1,6 @@
 [package]
 categories = ["template-engine", "web-programming"]
+description = "Simple HTML generation with no macros"
 documentation = "https://docs.rs/hotman"
 edition = "2021"
 keywords = ["html", "template", "ssr"]
