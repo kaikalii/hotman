@@ -1,8 +1,82 @@
-use std::{borrow::Cow, fmt};
+use std::{
+    borrow::Cow,
+    fmt,
+    ops::{Deref, DerefMut},
+};
 
-use crate::*;
+use crate::{format::*, *};
 
 use paste::paste;
+
+/// Wrapper around attributes that are common to all elements
+///
+/// Since many elements don't have any of these attributes, this
+/// wrapper keeps the size of the element structs small.
+///
+/// `Deref`s (and `DerefMut`s) to [`GlobalAttributesInner`]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub struct GlobalAttributes<'a>(Option<Box<GlobalAttributesInner<'a>>>);
+
+impl<'a> GlobalAttributes<'a> {
+    /// No attributes
+    pub const EMPTY: Self = Self(None);
+}
+
+/// Attributes that are common to all elements
+///
+/// Wrapped by [`GlobalAttributes`]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub struct GlobalAttributesInner<'a> {
+    /// The `id` attribute
+    pub id: Cow<'a, str>,
+    /// The `class` attribute
+    pub class: Cow<'a, str>,
+    /// The `style` attribute
+    pub style: Cow<'a, str>,
+    /// The `title` attribute
+    pub title: Cow<'a, str>,
+    /// The `autofocus` attribute
+    pub autofocus: bool,
+    /// The `itemscope` attribute
+    pub itemscope: bool,
+}
+
+pub(crate) static DEFAULT_GLOBAL_ATTRIBUTES_INNER: GlobalAttributesInner<'static> =
+    GlobalAttributesInner {
+        id: Cow::Borrowed(""),
+        class: Cow::Borrowed(""),
+        style: Cow::Borrowed(""),
+        title: Cow::Borrowed(""),
+        autofocus: false,
+        itemscope: false,
+    };
+
+impl<'a> Deref for GlobalAttributes<'a> {
+    type Target = GlobalAttributesInner<'a>;
+    fn deref(&self) -> &Self::Target {
+        self.0
+            .as_deref()
+            .unwrap_or(&DEFAULT_GLOBAL_ATTRIBUTES_INNER)
+    }
+}
+
+impl<'a> DerefMut for GlobalAttributes<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.0.get_or_insert_with(std::default::Default::default)
+    }
+}
+
+impl<'a> IndentFormat for GlobalAttributes<'a> {
+    fn indent_fmt(&self, f: &mut IndentFormatter) -> fmt::Result {
+        id_write(&self.id, f.f)?;
+        class_write(&self.class, f.f)?;
+        style_write(&self.style, f.f)?;
+        title_write(&self.title, f.f)?;
+        autofocus_write(&self.autofocus, f.f)?;
+        itemscope_write(&self.itemscope, f.f)?;
+        Ok(())
+    }
+}
 
 macro_rules! attribute_struct {
     ($name:tt[bool]) => {

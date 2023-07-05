@@ -2,7 +2,19 @@ use std::{borrow::Cow, fmt};
 
 use paste::paste;
 
-use crate::{attribute, attribute_traits, format::*, ElementData};
+use crate::{
+    attribute::{self, GlobalAttributes},
+    attribute_traits,
+    format::*,
+    ElementData,
+};
+
+/// Short alias for `br(())`
+pub const BR: element_structs::Br<'static> = element_structs::Br {
+    global: GlobalAttributes::EMPTY,
+    clear: Cow::Borrowed(""),
+    children: Vec::new(),
+};
 
 /// Trait for types of elements
 pub trait Element<'a> {
@@ -18,10 +30,10 @@ macro_rules! impl_global_attrs {
             paste! {
                 impl<'a> attribute_traits::[<Has $attr:camel>]<'a> for $name<'a> {
                     fn [<get_ $attr>](&self) -> attribute::[<$attr _ref_t>] {
-                        attribute::[<$attr _take_ref>](&self.$attr)
+                        attribute::[<$attr _take_ref>](&self.global.$attr)
                     }
                     fn [<set_ $attr>](&mut self, val: impl Into<attribute::[<$attr _t>]<'a>>) {
-                        self.$attr = val.into();
+                        self.global.$attr = val.into();
                     }
                 }
             }
@@ -76,18 +88,8 @@ macro_rules! elements {
                     #[derive(Debug, Clone, Default)]
                     #[doc = "A `<" [<$name:lower>] ">` element"]
                     pub struct $name<'a> {
-                        /// The `id` attribute
-                        pub id: Cow<'a, str>,
-                        /// The `class` attribute
-                        pub class: Cow<'a, str>,
-                        /// The `style` attribute
-                        pub style: Cow<'a, str>,
-                        /// The `title` attribute
-                        pub title: Cow<'a, str>,
-                        /// The `autofocus` attribute
-                        pub autofocus: bool,
-                        /// The `itemscope` attribute
-                        pub itemscope: bool,
+                        /// The global attributes of this element
+                        pub global: GlobalAttributes<'a>,
                         $(
                             #[doc = "The `" $attr "` attribute"]
                             pub $attr: attribute::[<$attr _t>]<'a>,
@@ -101,12 +103,7 @@ macro_rules! elements {
                     fn indent_fmt(&self, f: &mut IndentFormatter) -> fmt::Result {
                         let tag = paste!(stringify!([<$name:lower>]));
                         f.write(format_args!("<{tag}"))?;
-                        write_attr!(self, f, id);
-                        write_attr!(self, f, class);
-                        write_attr!(self, f, style);
-                        write_attr!(self, f, title);
-                        write_attr!(self, f, autofocus);
-                        write_attr!(self, f, itemscope);
+                        self.global.indent_fmt(f)?;
                         $(write_attr!(self, f, $attr);)*
                         if self.children.is_empty() {
                             f.write(format_args!(" />"))?;

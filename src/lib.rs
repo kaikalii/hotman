@@ -55,6 +55,7 @@ let dom = html((
             input((Type("password"), Name("password"), Placeholder("Password"))),
             input((Type("submit"), Value("Login"))),
         )),
+        BR,
         p((
             "Don't have an account? ",
             a((Href("/register"), "Register")),
